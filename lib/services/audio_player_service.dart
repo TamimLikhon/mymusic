@@ -54,30 +54,41 @@ class AudioPlayerService {
   Future<void> setQueue(List<Song> songs, {int initialIndex = 0}) async {
     if (!_isInitialized) await initialize();
 
+    // ignore: deprecated_member_use
     final playlist = ConcatenatingAudioSource(
-      children: songs.map((song) => AudioSource.uri(
-        Uri.parse('file://${song.file_path}'),
-        tag: MediaItem(
-          id: song.id,
-          title: song.title,
-          artist: song.artist ?? 'Unknown',
-          album: song.album ?? 'Unknown',
-        ),
-      )).toList(),
+      children: songs
+          .map(
+            (song) => AudioSource.uri(
+              Uri.parse('file://${song.file_path}'),
+              tag: MediaItem(
+                id: song.id,
+                title: song.title,
+                artist: song.artist,
+                album: song.album,
+              ),
+            ),
+          )
+          .toList(),
     );
 
-    await _player.setAudioSource(playlist, initialIndex: initialIndex, initialPosition: Duration.zero);
+    await _player.setAudioSource(
+      playlist,
+      initialIndex: initialIndex,
+      initialPosition: Duration.zero,
+    );
   }
 
   Future<void> play() => _player.play();
   Future<void> pause() => _player.pause();
   Future<void> stop() => _player.stop();
-  Future<void> seek(Duration position, {int? index}) => _player.seek(position, index: index);
+  Future<void> seek(Duration position, {int? index}) =>
+      _player.seek(position, index: index);
   Future<void> seekToNext() => _player.seekToNext();
   Future<void> seekToPrevious() => _player.seekToPrevious();
   Future<void> setVolume(double volume) => _player.setVolume(volume);
   Future<void> setLoopMode(LoopMode mode) => _player.setLoopMode(mode);
-  Future<void> setShuffleModeEnabled(bool enabled) => _player.setShuffleModeEnabled(enabled);
+  Future<void> setShuffleModeEnabled(bool enabled) =>
+      _player.setShuffleModeEnabled(enabled);
 
   Stream<PlayerState> get playerStateStream => _player.playerStateStream;
   Stream<Duration?> get durationStream => _player.durationStream;

@@ -1,4 +1,3 @@
-import 'dart:math';
 import 'package:flutter/foundation.dart';
 import 'package:just_audio/just_audio.dart';
 import 'package:just_audio_background/just_audio_background.dart';
@@ -15,7 +14,7 @@ class AudioProvider extends ChangeNotifier {
   bool _isPlaying = false;
   Duration _position = Duration.zero;
   Duration _duration = Duration.zero;
-  bool _isLoading = false;
+  final bool _isLoading = false;
 
   QueueState get queueState => _queueState;
   bool get isPlaying => _isPlaying;
@@ -55,22 +54,25 @@ class AudioProvider extends ChangeNotifier {
 
     _service.sequenceStateStream.listen((sequenceState) {
       if (sequenceState == null) return;
-      
+
       final effectiveSequence = sequenceState.effectiveSequence;
       if (effectiveSequence.isEmpty) return;
-      
+
       final baseQueue = _queueState.unshuffledQueue ?? _queueState.queue;
-      
+
       // Update queue to match effective sequence (handles shuffle natively)
       List<Song> newQueue = [];
       for (var source in effectiveSequence) {
         if (source.tag is MediaItem) {
           final tag = source.tag as MediaItem;
-          final song = baseQueue.firstWhere((s) => s.id == tag.id, orElse: () => baseQueue.first);
+          final song = baseQueue.firstWhere(
+            (s) => s.id == tag.id,
+            orElse: () => baseQueue.first,
+          );
           newQueue.add(song);
         }
       }
-      
+
       // Find current index in the effective sequence
       final currentSource = sequenceState.currentSource;
       int newIndex = 0;
@@ -78,42 +80,48 @@ class AudioProvider extends ChangeNotifier {
         newIndex = effectiveSequence.indexOf(currentSource);
         if (newIndex == -1) newIndex = 0;
       }
-      
+
       _queueState = _queueState.copyWith(
         queue: newQueue,
         currentIndex: newIndex,
         isShuffled: _player.shuffleModeEnabled,
         repeatMode: _mapLoopMode(_player.loopMode),
       );
-      
+
       final song = _queueState.currentSong;
       if (song != null) {
         _db.songDao.updateLastPlayed(song.id);
       }
-      
+
       notifyListeners();
     });
   }
 
   RepeatMode _mapLoopMode(LoopMode mode) {
     switch (mode) {
-      case LoopMode.off: return RepeatMode.none;
-      case LoopMode.one: return RepeatMode.one;
-      case LoopMode.all: return RepeatMode.all;
+      case LoopMode.off:
+        return RepeatMode.none;
+      case LoopMode.one:
+        return RepeatMode.one;
+      case LoopMode.all:
+        return RepeatMode.all;
     }
   }
 
   LoopMode _mapRepeatMode(RepeatMode mode) {
     switch (mode) {
-      case RepeatMode.none: return LoopMode.off;
-      case RepeatMode.one: return LoopMode.one;
-      case RepeatMode.all: return LoopMode.all;
+      case RepeatMode.none:
+        return LoopMode.off;
+      case RepeatMode.one:
+        return LoopMode.one;
+      case RepeatMode.all:
+        return LoopMode.all;
     }
   }
 
   Future<void> playAllSongs(List<Song> songs, {int startIndex = 0}) async {
     if (songs.isEmpty) return;
-    
+
     _queueState = QueueState(
       source: QueueSource.allSongs,
       queue: songs,
@@ -125,7 +133,11 @@ class AudioProvider extends ChangeNotifier {
     await _service.play();
   }
 
-  Future<void> playFromTag(String tagId, List<Song> songs, {int startIndex = 0}) async {
+  Future<void> playFromTag(
+    String tagId,
+    List<Song> songs, {
+    int startIndex = 0,
+  }) async {
     if (songs.isEmpty) return;
 
     _queueState = QueueState(
@@ -173,7 +185,7 @@ class AudioProvider extends ChangeNotifier {
 
   Future<void> play() async => await _service.play();
   Future<void> pause() async => await _service.pause();
-  
+
   Future<void> togglePlayPause() async {
     if (_isPlaying) {
       await pause();
@@ -188,18 +200,20 @@ class AudioProvider extends ChangeNotifier {
 
   Future<void> jumpToQueueIndex(int index) async {
     if (index < 0 || index >= _queueState.queue.length) return;
-    
-    // index is relative to effectiveSequence. 
+
+    // index is relative to effectiveSequence.
     // We need to map it back to the original source index for just_audio.seek()
-    final sequence = _player.sequenceState?.effectiveSequence;
-    if (sequence != null && index < sequence.length) {
-      final originalIndex = _player.sequenceState?.sequence.indexOf(sequence[index]);
-      if (originalIndex != null && originalIndex != -1) {
+    final sequence = _player.sequenceState.effectiveSequence;
+    if (index < sequence.length) {
+      final originalIndex = _player.sequenceState.sequence.indexOf(
+        sequence[index],
+      );
+      if (originalIndex != -1) {
         await _service.seek(Duration.zero, index: originalIndex);
         return;
       }
     }
-    
+
     await _service.seek(Duration.zero, index: index);
   }
 
@@ -227,11 +241,17 @@ class AudioProvider extends ChangeNotifier {
   Future<void> toggleRepeat() async {
     RepeatMode nextMode;
     switch (_queueState.repeatMode) {
-      case RepeatMode.none: nextMode = RepeatMode.all; break;
-      case RepeatMode.all: nextMode = RepeatMode.one; break;
-      case RepeatMode.one: nextMode = RepeatMode.none; break;
+      case RepeatMode.none:
+        nextMode = RepeatMode.all;
+        break;
+      case RepeatMode.all:
+        nextMode = RepeatMode.one;
+        break;
+      case RepeatMode.one:
+        nextMode = RepeatMode.none;
+        break;
     }
-    
+
     await _service.setLoopMode(_mapRepeatMode(nextMode));
   }
 
