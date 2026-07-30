@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:hugeicons/hugeicons.dart';
 import 'package:provider/provider.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_typography.dart';
-import '../../core/theme/neumorphic.dart';
+import '../../core/theme/glass_card.dart';
 import '../../providers/tag_provider.dart';
 
 class AllTagsPage extends StatelessWidget {
@@ -11,31 +12,141 @@ class AllTagsPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        leading: Builder(
-          builder: (context) => IconButton(
-            icon: const Icon(Icons.menu),
-            onPressed: () => context.findRootAncestorStateOfType<ScaffoldState>()?.openDrawer(),
-          ),
-        ),
-        title: Text('Tags', style: AppTypography.heading),
-      ),
+      backgroundColor: AppColors.background,
       body: Consumer<TagProvider>(
         builder: (context, tagProvider, _) {
-          if (tagProvider.isLoading) {
-            return const Center(child: CircularProgressIndicator(color: AppColors.primary));
-          }
-
-          if (tagProvider.tags.isEmpty) {
-            return _buildEmptyState(context);
-          }
-
-          return _buildGrid(context, tagProvider);
+          return CustomScrollView(
+            slivers: [
+              SliverToBoxAdapter(
+                child: SafeArea(
+                  bottom: false,
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(20, 20, 20, 8),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: Text('Library', style: AppTypography.display.copyWith(fontSize: 28)),
+                        ),
+                        GestureDetector(
+                          onTap: () => _showCreateTagDialog(context),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 9),
+                            decoration: GlassCard.accent(radius: 20, accentColor: AppColors.primary),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                const HugeIcon(icon: HugeIcons.strokeRoundedAdd01, size: 16, color: Colors.white),
+                                const SizedBox(width: 6),
+                                Text(
+                                  'New Tag',
+                                  style: AppTypography.caption.copyWith(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+              if (tagProvider.isLoading)
+                const SliverFillRemaining(
+                  child: Center(
+                    child: CircularProgressIndicator(color: AppColors.primary, strokeWidth: 2),
+                  ),
+                )
+              else if (tagProvider.tags.isEmpty)
+                SliverFillRemaining(child: _buildEmptyState(context))
+              else ...[
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
+                    child: Text('YOUR TAGS', style: AppTypography.overline),
+                  ),
+                ),
+                SliverPadding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  sliver: SliverGrid(
+                    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: 2,
+                      crossAxisSpacing: 12,
+                      mainAxisSpacing: 12,
+                      childAspectRatio: 1.1,
+                    ),
+                    delegate: SliverChildBuilderDelegate(
+                      (context, index) {
+                        final tag = tagProvider.tags[index];
+                        final songCount = tagProvider.songCounts[tag.id] ?? 0;
+                        final tagColor = Color(tag.color);
+                        return _buildTagCard(context, tag.id, tag.name, tag.color, tagColor, songCount);
+                      },
+                      childCount: tagProvider.tags.length,
+                    ),
+                  ),
+                ),
+              ],
+              const SliverPadding(padding: EdgeInsets.only(bottom: 20)),
+            ],
+          );
         },
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () => _showCreateTagDialog(context),
-        child: const Icon(Icons.add),
+    );
+  }
+
+  Widget _buildTagCard(BuildContext context, String tagId, String tagName,
+      int tagColorInt, Color tagColor, int songCount) {
+    return GestureDetector(
+      onTap: () => Navigator.pushNamed(context, '/tag/$tagId'),
+      onLongPress: () => _showTagOptions(context, tagId, tagName, tagColorInt),
+      child: Container(
+        decoration: BoxDecoration(
+          color: tagColor.withValues(alpha: 0.10),
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: tagColor.withValues(alpha: 0.25), width: 1),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(18),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                width: 44,
+                height: 44,
+                decoration: BoxDecoration(
+                  color: tagColor.withValues(alpha: 0.20),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: HugeIcon(icon: HugeIcons.strokeRoundedTag01, color: tagColor, size: 22),
+              ),
+              const Spacer(),
+              Text(
+                tagName,
+                style: AppTypography.bodyMedium.copyWith(fontWeight: FontWeight.w700),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+              const SizedBox(height: 4),
+              Row(
+                children: [
+                  HugeIcon(icon: HugeIcons.strokeRoundedMusicNote01, size: 11, color: tagColor),
+                  const SizedBox(width: 4),
+                  Text(
+                    '$songCount songs',
+                    style: AppTypography.caption.copyWith(
+                      color: tagColor,
+                      fontWeight: FontWeight.w600,
+                      fontSize: 11,
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -48,39 +159,37 @@ class AllTagsPage extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Container(
-              width: 90,
-              height: 90,
-              decoration: Neumorphic.raisedCircle(),
-              child: const Icon(Icons.label_off_rounded, size: 40, color: AppColors.textDisabled),
+              width: 100,
+              height: 100,
+              decoration: BoxDecoration(
+                color: AppColors.surface,
+                borderRadius: BorderRadius.circular(28),
+                border: Border.all(color: AppColors.surfaceBorder),
+              ),
+              child: const HugeIcon(icon: HugeIcons.strokeRoundedTag01, size: 46, color: AppColors.textDisabled),
             ),
-            const SizedBox(height: 22),
-            Text(
-              'No tags yet',
-              style: AppTypography.heading.copyWith(fontSize: 17),
-            ),
+            const SizedBox(height: 24),
+            Text('No tags yet', style: AppTypography.heading.copyWith(fontSize: 18)),
             const SizedBox(height: 8),
             Text(
-              'Create tags to organize your music',
-              style: AppTypography.caption,
+              'Create tags to organize your music into playlists and moods.',
+              style: AppTypography.caption.copyWith(height: 1.5),
               textAlign: TextAlign.center,
             ),
-            const SizedBox(height: 28),
+            const SizedBox(height: 32),
             GestureDetector(
               onTap: () => _showCreateTagDialog(context),
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 13),
-                decoration: Neumorphic.raisedAccent(
-                  radius: 26,
-                  accent: AppColors.primary,
-                ),
+                padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 14),
+                decoration: GlassCard.accent(radius: 28, accentColor: AppColors.primary),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const Icon(Icons.add_rounded, color: Colors.white, size: 20),
+                    const HugeIcon(icon: HugeIcons.strokeRoundedAdd01, color: Colors.white, size: 20),
                     const SizedBox(width: 8),
                     Text(
                       'Create Tag',
-                      style: AppTypography.body.copyWith(
+                      style: AppTypography.bodyMedium.copyWith(
                         color: Colors.white,
                         fontWeight: FontWeight.w600,
                       ),
@@ -95,91 +204,12 @@ class AllTagsPage extends StatelessWidget {
     );
   }
 
-  Widget _buildGrid(BuildContext context, TagProvider tagProvider) {
-    return GridView.builder(
-      padding: const EdgeInsets.all(16),
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 2,
-        crossAxisSpacing: 12,
-        mainAxisSpacing: 12,
-        childAspectRatio: 1.1,
-      ),
-      itemCount: tagProvider.tags.length,
-      itemBuilder: (context, index) {
-        final tag = tagProvider.tags[index];
-        final songCount = tagProvider.songCounts[tag.id] ?? 0;
-        final tagColor = Color(tag.color);
-
-        return GestureDetector(
-          onTap: () => Navigator.pushNamed(context, '/tag/${tag.id}'),
-          onLongPress: () => _showTagOptions(context, tag.id, tag.name, tag.color),
-          child: Container(
-            decoration: Neumorphic.raised(radius: 18),
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Container(
-                    width: 44,
-                    height: 44,
-                    decoration: BoxDecoration(
-                      color: tagColor.withValues(alpha: 0.15),
-                      borderRadius: BorderRadius.circular(12),
-                      boxShadow: [
-                        BoxShadow(
-                          color: tagColor.withValues(alpha: 0.2),
-                          blurRadius: 8,
-                          offset: const Offset(2, 2),
-                        ),
-                        BoxShadow(
-                          color: Colors.white.withValues(alpha: 0.9),
-                          blurRadius: 6,
-                          offset: const Offset(-2, -2),
-                        ),
-                      ],
-                    ),
-                    child: Icon(Icons.label_rounded, color: tagColor, size: 24),
-                  ),
-                  const Spacer(),
-                  Text(
-                    tag.name,
-                    style: AppTypography.body.copyWith(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w700,
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  const SizedBox(height: 4),
-                  Row(
-                    children: [
-                      Icon(Icons.music_note_rounded, size: 12, color: tagColor),
-                      const SizedBox(width: 4),
-                      Text(
-                        '$songCount songs',
-                        style: AppTypography.caption.copyWith(
-                          color: tagColor,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-          ),
-        );
-      },
-    );
-  }
-
   void _showTagOptions(BuildContext context, String tagId, String tagName, int tagColor) {
     showModalBottomSheet(
       context: context,
-      backgroundColor: AppColors.background,
+      backgroundColor: AppColors.surfaceHigh,
       shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
       ),
       builder: (context) {
         return SafeArea(
@@ -189,56 +219,63 @@ class AllTagsPage extends StatelessWidget {
               Container(
                 width: 40,
                 height: 4,
-                margin: const EdgeInsets.only(top: 12, bottom: 16),
+                margin: const EdgeInsets.only(top: 12, bottom: 20),
                 decoration: BoxDecoration(
-                  color: AppColors.divider,
+                  color: AppColors.surfaceBorder,
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
+                padding: const EdgeInsets.symmetric(horizontal: 20),
                 child: Row(
                   children: [
                     Container(
-                      width: 36,
-                      height: 36,
+                      width: 40,
+                      height: 40,
                       decoration: BoxDecoration(
                         color: Color(tagColor).withValues(alpha: 0.15),
-                        borderRadius: BorderRadius.circular(8),
+                        borderRadius: BorderRadius.circular(10),
                       ),
-                      child: Icon(Icons.label, color: Color(tagColor), size: 20),
+                      child: HugeIcon(icon: HugeIcons.strokeRoundedTag01, color: Color(tagColor), size: 20),
                     ),
                     const SizedBox(width: 12),
                     Expanded(
-                      child: Text(
-                        tagName,
-                        style: AppTypography.body.copyWith(fontSize: 16),
-                      ),
+                      child: Text(tagName, style: AppTypography.heading),
                     ),
                   ],
                 ),
               ),
               const SizedBox(height: 16),
               ListTile(
-                leading: const Icon(Icons.edit, color: AppColors.amber),
-                title: Text('Edit Tag', style: AppTypography.body.copyWith(fontSize: 14)),
+                leading: Container(
+                  width: 40,
+                  height: 40,
+                  decoration: GlassCard.card(radius: 12),
+                  child: const HugeIcon(icon: HugeIcons.strokeRoundedEdit01, color: AppColors.primary, size: 20),
+                ),
+                title: Text('Edit Tag', style: AppTypography.body),
                 onTap: () {
                   Navigator.pop(context);
                   _showEditTagDialog(context, tagId, tagName, tagColor);
                 },
               ),
               ListTile(
-                leading: const Icon(Icons.delete_outline, color: AppColors.burntOrange),
+                leading: Container(
+                  width: 40,
+                  height: 40,
+                  decoration: GlassCard.card(radius: 12),
+                  child: const HugeIcon(icon: HugeIcons.strokeRoundedDelete01, color: AppColors.secondary, size: 20),
+                ),
                 title: Text(
                   'Delete Tag',
-                  style: AppTypography.body.copyWith(fontSize: 14, color: AppColors.burntOrange),
+                  style: AppTypography.body.copyWith(color: AppColors.secondary),
                 ),
                 onTap: () {
                   Navigator.pop(context);
                   _confirmDeleteTag(context, tagId, tagName);
                 },
               ),
-              const SizedBox(height: 8),
+              const SizedBox(height: 16),
             ],
           ),
         );
@@ -248,15 +285,14 @@ class AllTagsPage extends StatelessWidget {
 
   void _showCreateTagDialog(BuildContext context) {
     final nameController = TextEditingController();
-    int selectedColor = AppColors.amber.toARGB32();
+    int selectedColor = AppColors.primary.toARGB32();
 
     showDialog(
       context: context,
       builder: (context) => StatefulBuilder(
         builder: (context, setState) {
           return AlertDialog(
-            backgroundColor: AppColors.surface,
-            title: Text('New Tag', style: AppTypography.heading.copyWith(fontSize: 12)),
+            title: Text('New Tag', style: AppTypography.heading),
             content: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
@@ -267,15 +303,15 @@ class AllTagsPage extends StatelessWidget {
                   decoration: InputDecoration(
                     hintText: 'Tag name',
                     hintStyle: AppTypography.caption,
-                    enabledBorder: const UnderlineInputBorder(
-                      borderSide: BorderSide(color: AppColors.divider),
+                    enabledBorder: UnderlineInputBorder(
+                      borderSide: BorderSide(color: AppColors.surfaceBorder),
                     ),
                     focusedBorder: const UnderlineInputBorder(
-                      borderSide: BorderSide(color: AppColors.amber),
+                      borderSide: BorderSide(color: AppColors.primary),
                     ),
                   ),
                 ),
-                const SizedBox(height: 16),
+                const SizedBox(height: 20),
                 _buildColorPicker(selectedColor, (color) {
                   setState(() => selectedColor = color);
                 }),
@@ -284,7 +320,8 @@ class AllTagsPage extends StatelessWidget {
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(context),
-                child: Text('Cancel', style: AppTypography.caption),
+                child: Text('Cancel',
+                    style: AppTypography.body.copyWith(color: AppColors.textSecondary)),
               ),
               TextButton(
                 onPressed: () {
@@ -293,7 +330,8 @@ class AllTagsPage extends StatelessWidget {
                     Navigator.pop(context);
                   }
                 },
-                child: Text('Create', style: AppTypography.body.copyWith(color: AppColors.amber)),
+                child: Text('Create',
+                    style: AppTypography.body.copyWith(color: AppColors.primary)),
               ),
             ],
           );
@@ -302,7 +340,8 @@ class AllTagsPage extends StatelessWidget {
     );
   }
 
-  void _showEditTagDialog(BuildContext context, String tagId, String currentName, int currentColor) {
+  void _showEditTagDialog(
+      BuildContext context, String tagId, String currentName, int currentColor) {
     final nameController = TextEditingController(text: currentName);
     int selectedColor = currentColor;
 
@@ -311,8 +350,7 @@ class AllTagsPage extends StatelessWidget {
       builder: (context) => StatefulBuilder(
         builder: (context, setState) {
           return AlertDialog(
-            backgroundColor: AppColors.surface,
-            title: Text('Edit Tag', style: AppTypography.heading.copyWith(fontSize: 12)),
+            title: Text('Edit Tag', style: AppTypography.heading),
             content: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
@@ -322,15 +360,15 @@ class AllTagsPage extends StatelessWidget {
                   decoration: InputDecoration(
                     hintText: 'Tag name',
                     hintStyle: AppTypography.caption,
-                    enabledBorder: const UnderlineInputBorder(
-                      borderSide: BorderSide(color: AppColors.divider),
+                    enabledBorder: UnderlineInputBorder(
+                      borderSide: BorderSide(color: AppColors.surfaceBorder),
                     ),
                     focusedBorder: const UnderlineInputBorder(
-                      borderSide: BorderSide(color: AppColors.amber),
+                      borderSide: BorderSide(color: AppColors.primary),
                     ),
                   ),
                 ),
-                const SizedBox(height: 16),
+                const SizedBox(height: 20),
                 _buildColorPicker(selectedColor, (color) {
                   setState(() => selectedColor = color);
                 }),
@@ -339,16 +377,20 @@ class AllTagsPage extends StatelessWidget {
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(context),
-                child: Text('Cancel', style: AppTypography.caption),
+                child: Text('Cancel',
+                    style: AppTypography.body.copyWith(color: AppColors.textSecondary)),
               ),
               TextButton(
                 onPressed: () {
                   if (nameController.text.isNotEmpty) {
-                    context.read<TagProvider>().updateTag(tagId, nameController.text, selectedColor);
+                    context
+                        .read<TagProvider>()
+                        .updateTag(tagId, nameController.text, selectedColor);
                     Navigator.pop(context);
                   }
                 },
-                child: Text('Save', style: AppTypography.body.copyWith(color: AppColors.amber)),
+                child: Text('Save',
+                    style: AppTypography.body.copyWith(color: AppColors.primary)),
               ),
             ],
           );
@@ -359,9 +401,9 @@ class AllTagsPage extends StatelessWidget {
 
   Widget _buildColorPicker(int selectedColor, ValueChanged<int> onColorSelected) {
     final colors = [
-      AppColors.amber.toARGB32(),
-      AppColors.burntOrange.toARGB32(),
-      AppColors.neonGreen.toARGB32(),
+      AppColors.primary.toARGB32(),
+      AppColors.secondary.toARGB32(),
+      AppColors.green.toARGB32(),
       const Color(0xFFE85D75).toARGB32(),
       const Color(0xFF7B68EE).toARGB32(),
       const Color(0xFF00CED1).toARGB32(),
@@ -372,30 +414,29 @@ class AllTagsPage extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('Color', style: AppTypography.caption),
-        const SizedBox(height: 8),
+        Text('Pick a color', style: AppTypography.caption),
+        const SizedBox(height: 10),
         Wrap(
-          spacing: 8,
-          runSpacing: 8,
+          spacing: 10,
+          runSpacing: 10,
           children: colors.map((color) {
             final isSelected = color == selectedColor;
             return GestureDetector(
               onTap: () => onColorSelected(color),
-              child: Container(
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 150),
                 width: 36,
                 height: 36,
                 decoration: BoxDecoration(
                   color: Color(color),
                   shape: BoxShape.circle,
-                  border: isSelected
-                      ? Border.all(color: Colors.white, width: 3)
-                      : null,
+                  border: isSelected ? Border.all(color: Colors.white, width: 2.5) : null,
                   boxShadow: isSelected
-                      ? [BoxShadow(color: Color(color).withValues(alpha: 0.5), blurRadius: 8)]
+                      ? [BoxShadow(color: Color(color).withValues(alpha: 0.5), blurRadius: 10)]
                       : null,
                 ),
                 child: isSelected
-                    ? const Icon(Icons.check, size: 18, color: Colors.white)
+                    ? const HugeIcon(icon: HugeIcons.strokeRoundedTick01, size: 16, color: Colors.white)
                     : null,
               ),
             );
@@ -409,23 +450,24 @@ class AllTagsPage extends StatelessWidget {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        backgroundColor: AppColors.surface,
-        title: Text('Delete Tag', style: AppTypography.heading.copyWith(fontSize: 12)),
+        title: Text('Delete Tag', style: AppTypography.heading),
         content: Text(
-          'Delete "$tagName"? Songs in this tag will not be deleted.',
-          style: AppTypography.body,
+          'Delete "$tagName"? Songs won\'t be deleted.',
+          style: AppTypography.body.copyWith(color: AppColors.textSecondary),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: Text('Cancel', style: AppTypography.caption),
+            child: Text('Cancel',
+                style: AppTypography.body.copyWith(color: AppColors.textSecondary)),
           ),
           TextButton(
             onPressed: () {
               context.read<TagProvider>().deleteTag(tagId);
               Navigator.pop(context);
             },
-            child: Text('Delete', style: AppTypography.body.copyWith(color: AppColors.burntOrange)),
+            child: Text('Delete',
+                style: AppTypography.body.copyWith(color: AppColors.secondary)),
           ),
         ],
       ),

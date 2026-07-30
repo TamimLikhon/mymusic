@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import '../../core/theme/app_colors.dart';
-import '../../core/theme/app_typography.dart';
+import 'package:hugeicons/hugeicons.dart';
+import '../core/theme/app_typography.dart';
 
 class TagChip extends StatelessWidget {
   final String name;
@@ -24,29 +24,17 @@ class TagChip extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
         decoration: BoxDecoration(
-          color: AppColors.background,
+          color: chipColor.withValues(alpha: 0.12),
           borderRadius: BorderRadius.circular(20),
-          boxShadow: [
-            BoxShadow(
-              color: AppColors.shadowDark,
-              offset: const Offset(3, 3),
-              blurRadius: 6,
-            ),
-            const BoxShadow(
-              color: AppColors.shadowLight,
-              offset: Offset(-3, -3),
-              blurRadius: 6,
-            ),
-          ],
           border: Border.all(
-            color: chipColor.withValues(alpha: 0.25),
+            color: chipColor.withValues(alpha: 0.30),
             width: 1,
           ),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(Icons.label_rounded, size: 14, color: chipColor),
+            HugeIcon(icon: HugeIcons.strokeRoundedTag01, size: 13, color: chipColor),
             const SizedBox(width: 6),
             Text(
               name,
@@ -60,7 +48,7 @@ class TagChip extends StatelessWidget {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
               decoration: BoxDecoration(
-                color: chipColor.withValues(alpha: 0.15),
+                color: chipColor.withValues(alpha: 0.20),
                 borderRadius: BorderRadius.circular(10),
               ),
               child: Text(

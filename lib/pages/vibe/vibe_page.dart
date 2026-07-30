@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:hugeicons/hugeicons.dart';
 import 'package:provider/provider.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_typography.dart';
-import '../../core/theme/neumorphic.dart';
+import '../../core/theme/glass_card.dart';
 import '../../data/database/app_database.dart';
 import '../../providers/song_provider.dart';
 import '../../providers/tag_provider.dart';
@@ -13,7 +14,8 @@ import '../../widgets/tag_chip.dart';
 import '../../widgets/assign_tag_sheet.dart';
 
 class VibePage extends StatefulWidget {
-  const VibePage({super.key});
+  final VoidCallback? onMoreTap;
+  const VibePage({super.key, this.onMoreTap});
 
   @override
   State<VibePage> createState() => _VibePageState();
@@ -31,7 +33,6 @@ class _VibePageState extends State<VibePage> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Storage permission required to scan songs'),
-          backgroundColor: AppColors.burntOrange,
         ),
       );
       return;
@@ -45,18 +46,14 @@ class _VibePageState extends State<VibePage> {
         final count = provider.scannedCount;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(count > 0 ? 'Found $count new songs' : 'No new songs found'),
-            backgroundColor: AppColors.neonGreen.withValues(alpha: 0.8),
+            content: Text(count > 0 ? 'Found $count new songs 🎵' : 'No new songs found'),
           ),
         );
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error: $e'),
-            backgroundColor: AppColors.burntOrange,
-          ),
+          SnackBar(content: Text('Error: $e')),
         );
       }
     }
@@ -64,51 +61,25 @@ class _VibePageState extends State<VibePage> {
     setState(() => _isScanning = false);
   }
 
+  String _greeting() {
+    final hour = DateTime.now().hour;
+    if (hour < 12) return 'Good morning';
+    if (hour < 17) return 'Good afternoon';
+    return 'Good evening';
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        leading: Builder(
-          builder: (context) => IconButton(
-            icon: const Icon(Icons.menu),
-            onPressed: () => context.findRootAncestorStateOfType<ScaffoldState>()?.openDrawer(),
-          ),
-        ),
-        title: Text('Vibe', style: AppTypography.heading),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.shuffle),
-            tooltip: 'Shuffle all',
-            onPressed: _isScanning
-                ? null
-                : () {
-                    final songs = context.read<SongProvider>().songs;
-                    if (songs.isNotEmpty) {
-                      context.read<AudioProvider>().shuffleAllSongs(songs);
-                    }
-                  },
-          ),
-          IconButton(
-            icon: _isScanning
-                ? const SizedBox(
-                    width: 20,
-                    height: 20,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      color: AppColors.amber,
-                    ),
-                  )
-                : const Icon(Icons.refresh),
-            onPressed: _isScanning ? null : _scanSongs,
-          ),
-        ],
-      ),
+      backgroundColor: AppColors.background,
       body: Consumer3<SongProvider, TagProvider, AudioProvider>(
         builder: (context, songProvider, tagProvider, audioProvider, _) {
           if (songProvider.isLoading && songProvider.songs.isEmpty) {
             return const Center(
-              child: CircularProgressIndicator(color: AppColors.amber),
+              child: CircularProgressIndicator(
+                color: AppColors.primary,
+                strokeWidth: 2,
+              ),
             );
           }
 
@@ -130,45 +101,48 @@ class _VibePageState extends State<VibePage> {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Container(
-              width: 110,
-              height: 110,
-              decoration: Neumorphic.raisedCircle(),
-              child: const Icon(
-                Icons.album_rounded,
-                size: 52,
-                color: AppColors.primary,
+              width: 120,
+              height: 120,
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(
+                  colors: [AppColors.primary, AppColors.accent],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                borderRadius: BorderRadius.circular(32),
+              ),
+              child: const HugeIcon(icon: HugeIcons.strokeRoundedFolderMusic,
+                size: 56,
+                color: Colors.white,
               ),
             ),
-            const SizedBox(height: 28),
+            const SizedBox(height: 32),
             Text(
-              'No songs yet',
-              style: AppTypography.heading.copyWith(fontSize: 18),
+              'Your library is empty',
+              style: AppTypography.hero.copyWith(fontSize: 22),
             ),
-            const SizedBox(height: 10),
+            const SizedBox(height: 12),
             Text(
-              'Tap the button below to scan your device.\nThis requires storage permission to find audio files.',
-              style: AppTypography.caption,
+              'Scan your device to find audio files and start listening.',
+              style: AppTypography.caption.copyWith(height: 1.5),
               textAlign: TextAlign.center,
             ),
-            const SizedBox(height: 28),
+            const SizedBox(height: 36),
             GestureDetector(
               onTap: _scanSongs,
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 14),
-                decoration: Neumorphic.raisedAccent(
-                  radius: 28,
-                  accent: AppColors.primary,
-                ),
+                padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+                decoration: GlassCard.accent(radius: 30, accentColor: AppColors.primary),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const Icon(Icons.search_rounded, color: Colors.white, size: 20),
+                    const HugeIcon(icon: HugeIcons.strokeRoundedSearch01, color: Colors.white, size: 20),
                     const SizedBox(width: 10),
                     Text(
                       'Scan Device',
-                      style: AppTypography.body.copyWith(
+                      style: AppTypography.bodyMedium.copyWith(
                         color: Colors.white,
-                        fontWeight: FontWeight.w600,
+                        fontWeight: FontWeight.w700,
                       ),
                     ),
                   ],
@@ -181,10 +155,103 @@ class _VibePageState extends State<VibePage> {
     );
   }
 
-  Widget _buildContent(SongProvider songProvider, TagProvider tagProvider, AudioProvider audioProvider) {
+  Widget _buildContent(
+      SongProvider songProvider, TagProvider tagProvider, AudioProvider audioProvider) {
     return CustomScrollView(
       slivers: [
-        // Recently Played section
+        // ── App Bar ──────────────────────────────────────────────────────────
+        SliverAppBar(
+          backgroundColor: AppColors.background,
+          pinned: false,
+          floating: true,
+          snap: true,
+          expandedHeight: 120,
+          toolbarHeight: 0,
+          flexibleSpace: FlexibleSpaceBar(
+            background: Container(
+              padding: const EdgeInsets.fromLTRB(20, 0, 20, 16),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.end,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              _greeting(),
+                              style: AppTypography.caption.copyWith(
+                                color: AppColors.textSecondary,
+                              ),
+                            ),
+                            const SizedBox(height: 2),
+                            Text('MyMusic', style: AppTypography.display.copyWith(fontSize: 28)),
+                          ],
+                        ),
+                      ),
+                      // Scan button
+                      GestureDetector(
+                        onTap: _isScanning ? null : _scanSongs,
+                        child: Container(
+                          width: 40,
+                          height: 40,
+                          decoration: GlassCard.card(radius: 12),
+                          child: _isScanning
+                              ? const Center(
+                                  child: SizedBox(
+                                    width: 18,
+                                    height: 18,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                      color: AppColors.primary,
+                                    ),
+                                  ),
+                                )
+                              : const HugeIcon(icon: HugeIcons.strokeRoundedArrowReloadHorizontal,
+                                  size: 20, color: AppColors.textSecondary),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      // Shuffle button
+                      GestureDetector(
+                        onTap: () {
+                          final songs = context.read<SongProvider>().songs;
+                          if (songs.isNotEmpty) {
+                            context.read<AudioProvider>().shuffleAllSongs(songs);
+                          }
+                        },
+                        child: Container(
+                          width: 40,
+                          height: 40,
+                          decoration: GlassCard.card(radius: 12),
+                          child: const HugeIcon(icon: HugeIcons.strokeRoundedShuffle,
+                              size: 20, color: AppColors.textSecondary),
+                        ),
+                      ),
+                      if (widget.onMoreTap != null) ...[
+                        const SizedBox(width: 8),
+                        GestureDetector(
+                          onTap: widget.onMoreTap,
+                          child: Container(
+                            width: 40,
+                            height: 40,
+                            decoration: GlassCard.card(radius: 12),
+                            child: const HugeIcon(icon: HugeIcons.strokeRoundedMoreVertical,
+                                size: 20, color: AppColors.textSecondary),
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+
+        // ── Recently Played ───────────────────────────────────────────────────
         SliverToBoxAdapter(
           child: FutureBuilder<List<Song>>(
             future: songProvider.getRecentlyPlayed(),
@@ -197,55 +264,77 @@ class _VibePageState extends State<VibePage> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Padding(
-                    padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+                    padding: const EdgeInsets.fromLTRB(20, 8, 20, 12),
                     child: Text(
-                      'Recently Played',
-                      style: AppTypography.heading.copyWith(fontSize: 11),
+                      'RECENTLY PLAYED',
+                      style: AppTypography.overline,
                     ),
                   ),
                   SizedBox(
-                    height: 80,
+                    height: 110,
                     child: ListView.builder(
                       scrollDirection: Axis.horizontal,
-                      padding: const EdgeInsets.symmetric(horizontal: 12),
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
                       itemCount: recentSongs.length,
                       itemBuilder: (context, index) {
                         final song = recentSongs[index];
+                        final isActive = audioProvider.currentSong?.id == song.id;
+                        final colors = AppColors.seedGradient(song.title);
                         return GestureDetector(
                           onTap: () {
                             audioProvider.playAllSongs(
                               songProvider.songs,
-                              startIndex: songProvider.songs.indexWhere((s) => s.id == song.id),
+                              startIndex: songProvider.songs
+                                  .indexWhere((s) => s.id == song.id),
                             );
                           },
                           child: Container(
-                            width: 70,
+                            width: 90,
                             margin: const EdgeInsets.symmetric(horizontal: 4),
                             child: Column(
                               children: [
-                                Container(
-                                  width: 56,
-                                  height: 56,
-                                  decoration: audioProvider.currentSong?.id == song.id
-                                      ? Neumorphic.raisedAccent(
-                                          radius: 14,
-                                          accent: AppColors.primary,
-                                        )
-                                      : Neumorphic.raised(radius: 14),
+                                AnimatedContainer(
+                                  duration: const Duration(milliseconds: 200),
+                                  width: 76,
+                                  height: 76,
+                                  decoration: BoxDecoration(
+                                    gradient: LinearGradient(
+                                      colors: colors,
+                                      begin: Alignment.topLeft,
+                                      end: Alignment.bottomRight,
+                                    ),
+                                    borderRadius: BorderRadius.circular(16),
+                                    border: isActive
+                                        ? Border.all(
+                                            color: AppColors.primary,
+                                            width: 2,
+                                          )
+                                        : null,
+                                    boxShadow: isActive
+                                        ? [
+                                            BoxShadow(
+                                              color: AppColors.primary.withValues(alpha: 0.4),
+                                              blurRadius: 12,
+                                            )
+                                          ]
+                                        : null,
+                                  ),
                                   child: Center(
-                                    child: Icon(
-                                      Icons.music_note_rounded,
-                                      color: audioProvider.currentSong?.id == song.id
-                                          ? Colors.white
-                                          : AppColors.textSecondary,
-                                      size: 24,
+                                    child: Text(
+                                      song.title.isNotEmpty
+                                          ? song.title[0].toUpperCase()
+                                          : '♪',
+                                      style: AppTypography.hero.copyWith(
+                                        color: Colors.white.withValues(alpha: 0.9),
+                                        fontSize: 28,
+                                      ),
                                     ),
                                   ),
                                 ),
-                                const SizedBox(height: 4),
+                                const SizedBox(height: 6),
                                 Text(
                                   song.title,
-                                  style: AppTypography.caption.copyWith(fontSize: 9),
+                                  style: AppTypography.caption.copyWith(fontSize: 10),
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
                                   textAlign: TextAlign.center,
@@ -257,20 +346,19 @@ class _VibePageState extends State<VibePage> {
                       },
                     ),
                   ),
+                  const SizedBox(height: 8),
                 ],
               );
             },
           ),
         ),
-        // Tags section
+
+        // ── Tags ──────────────────────────────────────────────────────────────
         if (tagProvider.tags.isNotEmpty) ...[
           SliverToBoxAdapter(
             child: Padding(
-              padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-              child: Text(
-                'Your Tags',
-                style: AppTypography.heading.copyWith(fontSize: 11),
-              ),
+              padding: const EdgeInsets.fromLTRB(20, 16, 20, 10),
+              child: Text('YOUR TAGS', style: AppTypography.overline),
             ),
           ),
           SliverToBoxAdapter(
@@ -295,25 +383,24 @@ class _VibePageState extends State<VibePage> {
             ),
           ),
         ],
-        // All Songs section
+
+        // ── All Songs ─────────────────────────────────────────────────────────
         SliverToBoxAdapter(
           child: Padding(
-            padding: const EdgeInsets.fromLTRB(16, 20, 16, 8),
+            padding: const EdgeInsets.fromLTRB(20, 24, 20, 10),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
+                Text('ALL SONGS', style: AppTypography.overline),
                 Text(
-                  'All Songs',
-                  style: AppTypography.heading.copyWith(fontSize: 11),
-                ),
-                Text(
-                  '${songProvider.songs.length} songs',
-                  style: AppTypography.caption,
+                  '${songProvider.songs.length} tracks',
+                  style: AppTypography.caption.copyWith(fontSize: 11),
                 ),
               ],
             ),
           ),
         ),
+
         SliverList(
           delegate: SliverChildBuilderDelegate(
             (context, index) {
@@ -334,7 +421,8 @@ class _VibePageState extends State<VibePage> {
             childCount: songProvider.songs.length,
           ),
         ),
-        const SliverPadding(padding: EdgeInsets.only(bottom: 80)),
+
+        const SliverPadding(padding: EdgeInsets.only(bottom: 20)),
       ],
     );
   }
@@ -342,9 +430,9 @@ class _VibePageState extends State<VibePage> {
   void _showSongOptions(String songId, String songTitle) {
     showModalBottomSheet(
       context: context,
-      backgroundColor: AppColors.background,
+      backgroundColor: AppColors.surfaceHigh,
       shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
       ),
       builder: (context) {
         return SafeArea(
@@ -356,46 +444,50 @@ class _VibePageState extends State<VibePage> {
                 height: 4,
                 margin: const EdgeInsets.only(top: 12, bottom: 16),
                 decoration: BoxDecoration(
-                  color: AppColors.divider,
+                  color: AppColors.surfaceBorder,
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
+                padding: const EdgeInsets.symmetric(horizontal: 20),
                 child: Text(
                   songTitle,
-                  style: AppTypography.body.copyWith(fontSize: 14),
+                  style: AppTypography.heading,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
               ),
               const SizedBox(height: 16),
               ListTile(
-                leading: const Icon(Icons.label_outline, color: AppColors.amber),
-                title: Text(
-                  'Assign to tag',
-                  style: AppTypography.body.copyWith(fontSize: 14),
+                leading: Container(
+                  width: 40,
+                  height: 40,
+                  decoration: GlassCard.card(radius: 12),
+                  child: const HugeIcon(icon: HugeIcons.strokeRoundedTag01, color: AppColors.primary, size: 20),
                 ),
+                title: Text('Assign to tag', style: AppTypography.body),
                 onTap: () {
                   Navigator.pop(context);
                   AssignTagSheet.show(context, songId, songTitle);
                 },
               ),
               ListTile(
-                leading: const Icon(Icons.delete_outline, color: AppColors.burntOrange),
+                leading: Container(
+                  width: 40,
+                  height: 40,
+                  decoration: GlassCard.card(radius: 12),
+                  child: const HugeIcon(icon: HugeIcons.strokeRoundedDelete01, color: AppColors.secondary, size: 20),
+                ),
                 title: Text(
-                  'Delete from library',
-                  style: AppTypography.body.copyWith(
-                    fontSize: 14,
-                    color: AppColors.burntOrange,
-                  ),
+                  'Remove from library',
+                  style: AppTypography.body.copyWith(color: AppColors.secondary),
                 ),
                 onTap: () {
                   Navigator.pop(context);
                   _confirmDelete(songId, songTitle);
                 },
               ),
-              const SizedBox(height: 8),
+              const SizedBox(height: 16),
             ],
           ),
         );
@@ -407,29 +499,24 @@ class _VibePageState extends State<VibePage> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        backgroundColor: AppColors.background,
-        title: Text(
-          'Delete Song',
-          style: AppTypography.heading.copyWith(fontSize: 16),
-        ),
+        title: Text('Remove Song', style: AppTypography.heading),
         content: Text(
           'Remove "$songTitle" from your library?',
-          style: AppTypography.body,
+          style: AppTypography.body.copyWith(color: AppColors.textSecondary),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: Text('Cancel', style: AppTypography.caption),
+            child: Text('Cancel',
+                style: AppTypography.body.copyWith(color: AppColors.textSecondary)),
           ),
           TextButton(
             onPressed: () {
               context.read<SongProvider>().deleteSong(songId);
               Navigator.pop(context);
             },
-            child: Text(
-              'Delete',
-              style: AppTypography.body.copyWith(color: AppColors.burntOrange),
-            ),
+            child: Text('Remove',
+                style: AppTypography.body.copyWith(color: AppColors.secondary)),
           ),
         ],
       ),

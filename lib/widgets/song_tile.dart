@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import '../core/theme/app_colors.dart';
 import '../core/theme/app_typography.dart';
-import '../core/theme/neumorphic.dart';
 import '../core/utils/duration_formatter.dart';
 import '../data/database/app_database.dart';
 import 'animated_bars.dart';
@@ -28,147 +27,147 @@ class SongTile extends StatefulWidget {
 
 class _SongTileState extends State<SongTile>
     with SingleTickerProviderStateMixin {
-  late AnimationController _highlightController;
-  late Animation<double> _highlightAnim;
   bool _isPressed = false;
 
   @override
-  void initState() {
-    super.initState();
-    _highlightController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 350),
-    );
-    _highlightAnim = CurvedAnimation(
-      parent: _highlightController,
-      curve: Curves.easeOut,
-    );
-    if (widget.isPlaying) _highlightController.forward();
-  }
-
-  @override
-  void didUpdateWidget(SongTile oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (widget.isPlaying && !oldWidget.isPlaying) {
-      _highlightController.forward();
-    } else if (!widget.isPlaying && oldWidget.isPlaying) {
-      _highlightController.reverse();
-    }
-  }
-
-  @override
-  void dispose() {
-    _highlightController.dispose();
-    super.dispose();
-  }
-
-  @override
   Widget build(BuildContext context) {
-    return AnimatedBuilder(
-      animation: _highlightAnim,
-      builder: (context, child) {
-        return GestureDetector(
-          onTapDown: (_) => setState(() => _isPressed = true),
-          onTapUp: (_) {
-            setState(() => _isPressed = false);
-            widget.onTap?.call();
-          },
-          onTapCancel: () => setState(() => _isPressed = false),
-          onLongPress: widget.onLongPress,
-          child: AnimatedContainer(
-            duration: const Duration(milliseconds: 150),
-            margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-            decoration: widget.isPlaying
-                ? Neumorphic.raised(
-                    radius: 16,
-                    color: Color.lerp(
-                      AppColors.background,
-                      AppColors.primaryLight,
-                      _highlightAnim.value,
-                    )!,
-                  )
-                : _isPressed
-                    ? Neumorphic.pressed(radius: 16)
-                    : BoxDecoration(
-                        color: AppColors.background,
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-            child: Row(
-              children: [
-                if (widget.index != null)
-                  SizedBox(
-                    width: 28,
-                    child: widget.isPlaying
-                        ? const SizedBox.shrink()
-                        : Text(
-                            '${widget.index! + 1}',
-                            style: AppTypography.caption,
-                            textAlign: TextAlign.center,
-                          ),
-                  ),
-                _buildLeadingIcon(),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        widget.song.title,
-                        style: AppTypography.body.copyWith(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w600,
-                          color: widget.isPlaying
-                              ? AppColors.primary
-                              : AppColors.textPrimary,
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      const SizedBox(height: 2),
-                      Text(
-                        widget.song.artist,
-                        style: AppTypography.caption,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Text(
-                  formatDuration(widget.song.duration),
-                  style: AppTypography.caption.copyWith(fontSize: 11),
-                ),
-              ],
-            ),
-          ),
-        );
+    final colors = AppColors.seedGradient(widget.song.title);
+    final isPlaying = widget.isPlaying;
+
+    return GestureDetector(
+      onTapDown: (_) => setState(() => _isPressed = true),
+      onTapUp: (_) {
+        setState(() => _isPressed = false);
+        widget.onTap?.call();
       },
+      onTapCancel: () => setState(() => _isPressed = false),
+      onLongPress: widget.onLongPress,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 150),
+        margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        decoration: BoxDecoration(
+          color: _isPressed
+              ? AppColors.surface
+              : isPlaying
+                  ? AppColors.primaryFaint
+                  : Colors.transparent,
+          borderRadius: BorderRadius.circular(14),
+          border: isPlaying
+              ? Border.all(
+                  color: AppColors.primary.withValues(alpha: 0.3),
+                  width: 1,
+                )
+              : null,
+        ),
+        child: Row(
+          children: [
+            // Index or playing dot
+            if (widget.index != null)
+              SizedBox(
+                width: 28,
+                child: isPlaying
+                    ? Center(
+                        child: Container(
+                          width: 6,
+                          height: 6,
+                          decoration: const BoxDecoration(
+                            color: AppColors.primary,
+                            shape: BoxShape.circle,
+                          ),
+                        ),
+                      )
+                    : Text(
+                        '${widget.index! + 1}',
+                        style: AppTypography.caption.copyWith(
+                          fontSize: 11,
+                          color: AppColors.textDisabled,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+              ),
+            // Art placeholder
+            _buildArt(colors, isPlaying),
+            const SizedBox(width: 12),
+            // Song info
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    widget.song.title,
+                    style: AppTypography.bodyMedium.copyWith(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: isPlaying ? AppColors.primary : AppColors.textPrimary,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    widget.song.artist,
+                    style: AppTypography.caption,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: 8),
+            Text(
+              formatDuration(widget.song.duration),
+              style: AppTypography.caption.copyWith(
+                fontSize: 11,
+                color: AppColors.textDisabled,
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 
-  Widget _buildLeadingIcon() {
+  Widget _buildArt(List<Color> colors, bool isPlaying) {
     return AnimatedContainer(
-      duration: const Duration(milliseconds: 300),
+      duration: const Duration(milliseconds: 250),
       curve: Curves.easeOut,
-      width: 44,
-      height: 44,
-      decoration: widget.isPlaying
-          ? Neumorphic.raisedAccent(radius: 14, accent: AppColors.primary)
-          : Neumorphic.raised(radius: 14),
+      width: 46,
+      height: 46,
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: colors,
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: isPlaying
+            ? [
+                BoxShadow(
+                  color: colors[0].withValues(alpha: 0.5),
+                  blurRadius: 12,
+                  offset: const Offset(0, 4),
+                )
+              ]
+            : null,
+      ),
       child: Center(
-        child: widget.isPlaying
+        child: isPlaying
             ? AnimatedBars(
                 isPlaying: true,
                 width: 20,
                 height: 20,
-                color: Colors.white,
+                color: Colors.white.withValues(alpha: 0.9),
               )
-            : Icon(
-                Icons.music_note_rounded,
-                color: AppColors.textSecondary,
-                size: 20,
+            : Text(
+                widget.song.title.isNotEmpty
+                    ? widget.song.title[0].toUpperCase()
+                    : '♪',
+                style: AppTypography.heading.copyWith(
+                  color: Colors.white.withValues(alpha: 0.9),
+                  fontWeight: FontWeight.w800,
+                  fontSize: 18,
+                ),
               ),
       ),
     );

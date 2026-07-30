@@ -1,10 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:hugeicons/hugeicons.dart';
 import 'package:provider/provider.dart';
 import '../core/theme/app_colors.dart';
 import '../core/theme/app_typography.dart';
-import '../core/theme/neumorphic.dart';
+import '../core/theme/glass_card.dart';
 import '../providers/tag_provider.dart';
 
+/// Legacy Sidebar — kept for backward compatibility.
+/// The primary navigation is now the bottom nav bar in app.dart.
+/// This drawer is no longer attached to the shell scaffold.
 class Sidebar extends StatelessWidget {
   final String currentRoute;
   final Function(String) onNavigate;
@@ -18,32 +22,33 @@ class Sidebar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Drawer(
-      backgroundColor: AppColors.background,
+      backgroundColor: AppColors.surface,
       elevation: 0,
       child: SafeArea(
         child: Column(
           children: [
-            // Logo / header
+            // Header
             Padding(
-              padding: const EdgeInsets.fromLTRB(24, 28, 24, 12),
-              child: Container(
-                decoration: Neumorphic.raised(radius: 20, color: Colors.black),
-                padding: const EdgeInsets.all(16),
-                child: Image.asset(
-                  'assets/icon.png',
-                  height: 64,
-                ),
+              padding: const EdgeInsets.fromLTRB(20, 28, 20, 16),
+              child: Row(
+                children: [
+                  Container(
+                    width: 44,
+                    height: 44,
+                    decoration: GlassCard.accent(radius: 14),
+                    child: const HugeIcon(icon: HugeIcons.strokeRoundedFolderMusic,
+                        color: Colors.white, size: 22),
+                  ),
+                  const SizedBox(width: 14),
+                  Text('MyMusic', style: AppTypography.hero.copyWith(fontSize: 20)),
+                ],
               ),
             ),
-            const SizedBox(height: 12),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24),
-              child: Divider(color: AppColors.divider, thickness: 1),
-            ),
+            Divider(height: 1, color: AppColors.divider),
             const SizedBox(height: 8),
-            _buildItem(context, Icons.search_rounded, 'Search', '/search'),
-            _buildItem(context, Icons.home_rounded, 'Vibe', '/vibe'),
-            _buildItem(context, Icons.label_rounded, 'Tags', '/tags'),
+            _buildItem(context, HugeIcons.strokeRoundedSearch01, 'Search', '/search'),
+            _buildItem(context, HugeIcons.strokeRoundedHome01, 'Home', '/vibe'),
+            _buildItem(context, HugeIcons.strokeRoundedTag01, 'Tags', '/tags'),
             Consumer<TagProvider>(
               builder: (context, tagProvider, _) {
                 if (tagProvider.tags.isEmpty) return const SizedBox();
@@ -61,13 +66,10 @@ class Sidebar extends StatelessWidget {
                 );
               },
             ),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24),
-              child: Divider(color: AppColors.divider, thickness: 1),
-            ),
+            Divider(height: 1, color: AppColors.divider),
             const SizedBox(height: 8),
-            _buildItem(context, Icons.settings_rounded, 'Settings', '/settings'),
-            _buildItem(context, Icons.info_rounded, 'About', '/about'),
+            _buildItem(context, HugeIcons.strokeRoundedSettings01, 'Settings', '/settings'),
+            _buildItem(context, HugeIcons.strokeRoundedInformationCircle, 'About', '/about'),
             const SizedBox(height: 16),
           ],
         ),
@@ -75,15 +77,10 @@ class Sidebar extends StatelessWidget {
     );
   }
 
-  Widget _buildItem(
-    BuildContext context,
-    IconData icon,
-    String title,
-    String route,
-  ) {
+  Widget _buildItem(BuildContext context, dynamic icon, String title, String route) {
     final isActive = currentRoute == route;
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
       child: GestureDetector(
         onTap: () {
           onNavigate(route);
@@ -92,13 +89,16 @@ class Sidebar extends StatelessWidget {
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 200),
           decoration: isActive
-              ? Neumorphic.raisedAccent(radius: 14, accent: AppColors.primary)
-              : Neumorphic.pressed(radius: 14),
+              ? GlassCard.accent(radius: 12, accentColor: AppColors.primary)
+              : BoxDecoration(
+                  borderRadius: BorderRadius.circular(12),
+                  color: Colors.transparent,
+                ),
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           child: Row(
             children: [
-              Icon(
-                icon,
+              HugeIcon(
+                icon: icon,
                 size: 20,
                 color: isActive ? Colors.white : AppColors.textSecondary,
               ),
@@ -117,14 +117,9 @@ class Sidebar extends StatelessWidget {
     );
   }
 
-  Widget _buildTagItem(
-    BuildContext context,
-    String name,
-    String id,
-    bool isActive,
-  ) {
+  Widget _buildTagItem(BuildContext context, String name, String id, bool isActive) {
     return Padding(
-      padding: const EdgeInsets.only(left: 48, right: 16, top: 2, bottom: 2),
+      padding: const EdgeInsets.only(left: 44, right: 12, top: 2, bottom: 2),
       child: GestureDetector(
         onTap: () {
           onNavigate('/tag/$id');
@@ -132,9 +127,8 @@ class Sidebar extends StatelessWidget {
         },
         child: Row(
           children: [
-            Icon(
-              Icons.music_note_rounded,
-              size: 14,
+            HugeIcon(icon: HugeIcons.strokeRoundedMusicNote01,
+              size: 13,
               color: isActive ? AppColors.primary : AppColors.textDisabled,
             ),
             const SizedBox(width: 8),

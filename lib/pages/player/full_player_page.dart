@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:hugeicons/hugeicons.dart';
 import 'package:provider/provider.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_typography.dart';
-import '../../core/theme/neumorphic.dart';
+import '../../core/theme/glass_card.dart';
 import '../../providers/audio_provider.dart';
 import '../../data/models/queue_state.dart' as queue;
-import '../../widgets/vinyl_spinner.dart';
 import '../../widgets/retro_seek_bar.dart';
 import '../../widgets/assign_tag_sheet.dart';
 
@@ -17,86 +17,154 @@ class FullPlayerPage extends StatelessWidget {
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
+      useSafeArea: true,
       builder: (context) => const FullPlayerPage(),
     );
   }
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      height: MediaQuery.of(context).size.height * 0.92,
-      decoration: const BoxDecoration(
-        color: AppColors.background,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(32)),
-      ),
-      child: Consumer<AudioProvider>(
-        builder: (context, audioProvider, _) {
-          final song = audioProvider.currentSong;
+    return Consumer<AudioProvider>(
+      builder: (context, audioProvider, _) {
+        final song = audioProvider.currentSong;
 
-          if (song == null) {
-            return Center(
+        if (song == null) {
+          return Container(
+            height: 200,
+            decoration: const BoxDecoration(
+              color: AppColors.surfaceHigh,
+              borderRadius: BorderRadius.vertical(top: Radius.circular(32)),
+            ),
+            child: Center(
               child: Text('No song playing', style: AppTypography.caption),
-            );
-          }
-
-          return Column(
-            children: [
-              _buildHandle(context),
-              const SizedBox(height: 8),
-              _buildVinylSection(audioProvider),
-              const SizedBox(height: 20),
-              _buildSongInfo(song.title, song.artist, song.album),
-              const SizedBox(height: 20),
-              _buildSeekBar(audioProvider),
-              const SizedBox(height: 16),
-              _buildControls(audioProvider),
-              const SizedBox(height: 20),
-              _buildExtraActions(context, song.id, song.title),
-            ],
+            ),
           );
-        },
-      ),
+        }
+
+        final colors = AppColors.seedGradient(song.title);
+
+        return Container(
+          height: MediaQuery.of(context).size.height * 0.93,
+          decoration: BoxDecoration(
+            color: AppColors.background,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+          ),
+          child: Stack(
+            children: [
+              // Ambient gradient background
+              _AmbientBackground(colors: colors),
+
+              // Content
+              SafeArea(
+                bottom: false,
+                child: Column(
+                  children: [
+                    _buildHandle(context),
+                    const SizedBox(height: 8),
+                    Expanded(
+                      child: Column(
+                        children: [
+                          const SizedBox(height: 8),
+                          // Art card
+                          _buildArtCard(audioProvider, colors, song.title),
+                          const SizedBox(height: 28),
+                          // Song info
+                          _buildSongInfo(song.title, song.artist, song.album),
+                          const SizedBox(height: 24),
+                          // Seek bar
+                          _buildSeekBar(audioProvider),
+                          const SizedBox(height: 20),
+                          // Controls
+                          _buildControls(audioProvider),
+                          const SizedBox(height: 20),
+                          // Extra actions
+                          _buildExtraActions(context, song.id, song.title),
+                          const SizedBox(height: 16),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 
   Widget _buildHandle(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.only(top: 14, left: 16, right: 4),
+      padding: const EdgeInsets.fromLTRB(16, 14, 16, 0),
       child: Row(
         children: [
           const Spacer(),
           Container(
-            width: 44,
-            height: 5,
+            width: 40,
+            height: 4,
             decoration: BoxDecoration(
-              color: AppColors.divider,
-              borderRadius: BorderRadius.circular(3),
+              color: AppColors.surfaceBorder,
+              borderRadius: BorderRadius.circular(2),
             ),
           ),
           const Spacer(),
-          _NeuIconBtn(
-            icon: Icons.keyboard_arrow_down_rounded,
+          GestureDetector(
             onTap: () => Navigator.of(context).pop(),
-            size: 26,
+            child: Container(
+              width: 36,
+              height: 36,
+              decoration: GlassCard.card(radius: 10),
+              child: const HugeIcon(icon: HugeIcons.strokeRoundedArrowDown01,
+                color: AppColors.textSecondary,
+                size: 24,
+              ),
+            ),
           ),
-          const SizedBox(width: 8),
         ],
       ),
     );
   }
 
-  Widget _buildVinylSection(AudioProvider audioProvider) {
-    return Expanded(
-      flex: 3,
-      child: Center(
-        child: Container(
-          decoration: Neumorphic.raisedCircle(),
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: VinylSpinner(
-              isPlaying: audioProvider.isPlaying,
-              size: 220,
+  Widget _buildArtCard(AudioProvider audioProvider, List<Color> colors, String title) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 36),
+      child: AspectRatio(
+        aspectRatio: 1,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 400),
+          curve: Curves.easeOut,
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: colors,
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
             ),
+            borderRadius: BorderRadius.circular(24),
+            boxShadow: [
+              BoxShadow(
+                color: colors[0].withValues(alpha: 0.4),
+                blurRadius: 40,
+                offset: const Offset(0, 20),
+                spreadRadius: -8,
+              ),
+            ],
+          ),
+          child: Center(
+            child: audioProvider.isPlaying
+                ? Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      _SpinningVinylIcon(isPlaying: true),
+                    ],
+                  )
+                : Text(
+                    title.isNotEmpty ? title[0].toUpperCase() : '♪',
+                    style: TextStyle(
+                      color: Colors.white.withValues(alpha: 0.9),
+                      fontSize: 96,
+                      fontWeight: FontWeight.w900,
+                    ),
+                  ),
           ),
         ),
       ),
@@ -106,35 +174,37 @@ class FullPlayerPage extends StatelessWidget {
   Widget _buildSongInfo(String title, String artist, String album) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 36),
-      child: Column(
+      child: Row(
         children: [
-          Text(
-            title,
-            style: AppTypography.heading.copyWith(fontSize: 17),
-            textAlign: TextAlign.center,
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
-          ),
-          const SizedBox(height: 6),
-          Text(
-            artist,
-            style: AppTypography.body.copyWith(
-              color: AppColors.textSecondary,
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: AppTypography.playerTitle,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  artist,
+                  style: AppTypography.playerArtist,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                if (album != 'Unknown') ...[
+                  const SizedBox(height: 2),
+                  Text(
+                    album,
+                    style: AppTypography.caption,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
+              ],
             ),
-            textAlign: TextAlign.center,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
           ),
-          if (album != 'Unknown') ...[
-            const SizedBox(height: 4),
-            Text(
-              album,
-              style: AppTypography.caption,
-              textAlign: TextAlign.center,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
-          ],
         ],
       ),
     );
@@ -150,33 +220,38 @@ class FullPlayerPage extends StatelessWidget {
 
   Widget _buildControls(AudioProvider audioProvider) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 24),
+      padding: const EdgeInsets.symmetric(horizontal: 28),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          _NeuIconBtn(
+          // Shuffle
+          _ControlIcon(
             icon: audioProvider.queueState.isShuffled
-                ? Icons.shuffle_on_rounded
-                : Icons.shuffle_rounded,
+                ? HugeIcons.strokeRoundedShuffle
+                : HugeIcons.strokeRoundedShuffle,
             onTap: audioProvider.toggleShuffle,
             isActive: audioProvider.queueState.isShuffled,
           ),
-          _NeuIconBtn(
-            icon: Icons.skip_previous_rounded,
+          // Previous
+          _ControlIcon(
+            icon: HugeIcons.strokeRoundedPrevious,
             onTap: audioProvider.previous,
-            size: 30,
+            size: 32,
           ),
-          _PlayPauseButton(
+          // Play/Pause — large
+          _BigPlayPause(
             isPlaying: audioProvider.isPlaying,
             isLoading: audioProvider.isLoading,
             onPressed: audioProvider.togglePlayPause,
           ),
-          _NeuIconBtn(
-            icon: Icons.skip_next_rounded,
+          // Next
+          _ControlIcon(
+            icon: HugeIcons.strokeRoundedNext,
             onTap: audioProvider.next,
-            size: 30,
+            size: 32,
           ),
-          _NeuIconBtn(
+          // Repeat
+          _ControlIcon(
             icon: _getRepeatIcon(audioProvider.queueState.repeatMode),
             onTap: audioProvider.toggleRepeat,
             isActive: audioProvider.queueState.repeatMode != queue.RepeatMode.none,
@@ -186,14 +261,14 @@ class FullPlayerPage extends StatelessWidget {
     );
   }
 
-  IconData _getRepeatIcon(queue.RepeatMode mode) {
+  dynamic _getRepeatIcon(queue.RepeatMode mode) {
     switch (mode) {
       case queue.RepeatMode.none:
-        return Icons.repeat_rounded;
+        return HugeIcons.strokeRoundedRepeat;
       case queue.RepeatMode.all:
-        return Icons.repeat_on_rounded;
+        return HugeIcons.strokeRoundedRepeat;
       case queue.RepeatMode.one:
-        return Icons.repeat_one_on_rounded;
+        return HugeIcons.strokeRoundedRepeatOne01;
     }
   }
 
@@ -203,13 +278,13 @@ class FullPlayerPage extends StatelessWidget {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
         children: [
-          _NeuTextAction(
-            icon: Icons.label_outline_rounded,
+          _TextAction(
+            icon: HugeIcons.strokeRoundedTag01,
             label: 'Tag',
             onTap: () => AssignTagSheet.show(context, songId, songTitle),
           ),
-          _NeuTextAction(
-            icon: Icons.queue_music_rounded,
+          _TextAction(
+            icon: HugeIcons.strokeRoundedPlaylist01,
             label: 'Queue',
             onTap: () => _showQueueSheet(context),
           ),
@@ -225,7 +300,7 @@ class FullPlayerPage extends StatelessWidget {
 
     showModalBottomSheet(
       context: context,
-      backgroundColor: AppColors.background,
+      backgroundColor: AppColors.surfaceHigh,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
       ),
@@ -240,95 +315,103 @@ class FullPlayerPage extends StatelessWidget {
             return Column(
               children: [
                 Container(
-                  width: 44,
-                  height: 5,
-                  margin: const EdgeInsets.only(top: 14, bottom: 12),
+                  width: 40,
+                  height: 4,
+                  margin: const EdgeInsets.only(top: 14, bottom: 16),
                   decoration: BoxDecoration(
-                    color: AppColors.divider,
-                    borderRadius: BorderRadius.circular(3),
+                    color: AppColors.surfaceBorder,
+                    borderRadius: BorderRadius.circular(2),
                   ),
                 ),
                 Padding(
-                  padding: const EdgeInsets.fromLTRB(20, 0, 20, 12),
+                  padding: const EdgeInsets.fromLTRB(20, 0, 20, 16),
                   child: Row(
                     children: [
                       Container(
                         width: 36,
                         height: 36,
-                        decoration: Neumorphic.raised(radius: 10),
-                        child: const Icon(
-                          Icons.queue_music_rounded,
+                        decoration: GlassCard.card(radius: 10),
+                        child: const HugeIcon(icon: HugeIcons.strokeRoundedPlaylist01,
                           color: AppColors.primary,
                           size: 18,
                         ),
                       ),
                       const SizedBox(width: 12),
-                      Text('Up Next',
-                          style: AppTypography.heading.copyWith(fontSize: 15)),
+                      Text('Up Next', style: AppTypography.heading),
                       const Spacer(),
-                      Text('${q.length} songs',
-                          style: AppTypography.caption),
+                      Text(
+                        '${q.length} songs',
+                        style: AppTypography.caption,
+                      ),
                     ],
                   ),
                 ),
-                const Divider(height: 1),
+                Divider(height: 1, color: AppColors.divider),
                 Expanded(
                   child: ListView.builder(
                     controller: scrollController,
                     padding: const EdgeInsets.symmetric(vertical: 8),
                     itemCount: q.length,
                     itemBuilder: (context, index) {
-                      final song = q[index];
+                      final s = q[index];
                       final isCurrent = index == currentIndex;
+                      final colors = AppColors.seedGradient(s.title);
                       return ListTile(
-                        contentPadding: const EdgeInsets.symmetric(
-                            horizontal: 20, vertical: 2),
+                        contentPadding:
+                            const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
                         leading: Container(
-                          width: 38,
-                          height: 38,
-                          decoration: isCurrent
-                              ? Neumorphic.raisedAccent(
-                                  radius: 10, accent: AppColors.primary)
-                              : Neumorphic.raised(radius: 10),
-                          child: Icon(
-                            isCurrent
-                                ? Icons.equalizer_rounded
-                                : Icons.music_note_rounded,
-                            size: 18,
-                            color: isCurrent
-                                ? Colors.white
-                                : AppColors.textSecondary,
+                          width: 42,
+                          height: 42,
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              colors: colors,
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                            ),
+                            borderRadius: BorderRadius.circular(10),
+                            border: isCurrent
+                                ? Border.all(color: AppColors.primary, width: 2)
+                                : null,
+                          ),
+                          child: Center(
+                            child: isCurrent
+                                ? const HugeIcon(icon: HugeIcons.strokeRoundedMusicNote01,
+                                    size: 18,
+                                    color: Colors.white,
+                                  )
+                                : Text(
+                                    s.title.isNotEmpty ? s.title[0].toUpperCase() : '♪',
+                                    style: AppTypography.heading.copyWith(
+                                      color: Colors.white.withValues(alpha: 0.9),
+                                      fontSize: 16,
+                                    ),
+                                  ),
                           ),
                         ),
                         title: Text(
-                          song.title,
-                          style: AppTypography.body.copyWith(
+                          s.title,
+                          style: AppTypography.bodyMedium.copyWith(
                             fontSize: 13,
-                            fontWeight: FontWeight.w600,
-                            color: isCurrent
-                                ? AppColors.primary
-                                : AppColors.textPrimary,
+                            color: isCurrent ? AppColors.primary : AppColors.textPrimary,
                           ),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                         ),
                         subtitle: Text(
-                          song.artist,
+                          s.artist,
                           style: AppTypography.caption,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                         ),
                         trailing: isCurrent
-                            ? const Icon(Icons.graphic_eq_rounded,
+                            ? const HugeIcon(icon: HugeIcons.strokeRoundedMusicNote01,
                                 color: AppColors.primary, size: 18)
                             : Text(
                                 '${index + 1}',
                                 style: AppTypography.caption,
                               ),
                         onTap: () {
-                          context
-                              .read<AudioProvider>()
-                              .jumpToQueueIndex(index);
+                          context.read<AudioProvider>().jumpToQueueIndex(index);
                           Navigator.pop(context);
                         },
                       );
@@ -344,15 +427,140 @@ class FullPlayerPage extends StatelessWidget {
   }
 }
 
-// ── Neumorphic icon button ────────────────────────────────────────────────────
+// ── Ambient Background ────────────────────────────────────────────────────────
 
-class _NeuIconBtn extends StatefulWidget {
-  final IconData icon;
+class _AmbientBackground extends StatelessWidget {
+  final List<Color> colors;
+  const _AmbientBackground({required this.colors});
+
+  @override
+  Widget build(BuildContext context) {
+    return Positioned.fill(
+      child: ClipRRect(
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+        child: Stack(
+          children: [
+            // Base dark
+            Container(color: AppColors.background),
+            // Top-left blob
+            Positioned(
+              top: -60,
+              left: -80,
+              child: _GlowBlob(color: colors[0], size: 280),
+            ),
+            // Bottom-right blob
+            Positioned(
+              bottom: 40,
+              right: -60,
+              child: _GlowBlob(color: colors[1], size: 220),
+            ),
+            // Overlay darken
+            Container(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [
+                    AppColors.background.withValues(alpha: 0.55),
+                    AppColors.background.withValues(alpha: 0.90),
+                    AppColors.background,
+                  ],
+                  stops: const [0.0, 0.5, 1.0],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _GlowBlob extends StatelessWidget {
+  final Color color;
+  final double size;
+  const _GlowBlob({required this.color, required this.size});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: size,
+      height: size,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        boxShadow: [
+          BoxShadow(
+            color: color.withValues(alpha: 0.28),
+            blurRadius: size * 0.7,
+            spreadRadius: size * 0.1,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ── Spinning Vinyl Icon (compact) ─────────────────────────────────────────────
+
+class _SpinningVinylIcon extends StatefulWidget {
+  final bool isPlaying;
+  const _SpinningVinylIcon({required this.isPlaying});
+
+  @override
+  State<_SpinningVinylIcon> createState() => _SpinningVinylIconState();
+}
+
+class _SpinningVinylIconState extends State<_SpinningVinylIcon>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _ctrl;
+
+  @override
+  void initState() {
+    super.initState();
+    _ctrl = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 8),
+    );
+    if (widget.isPlaying) _ctrl.repeat();
+  }
+
+  @override
+  void didUpdateWidget(_SpinningVinylIcon old) {
+    super.didUpdateWidget(old);
+    if (widget.isPlaying && !_ctrl.isAnimating) {
+      _ctrl.repeat();
+    } else if (!widget.isPlaying && _ctrl.isAnimating) {
+      _ctrl.stop();
+    }
+  }
+
+  @override
+  void dispose() {
+    _ctrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return RotationTransition(
+      turns: _ctrl,
+      child: HugeIcon(icon: HugeIcons.strokeRoundedMusicNote02,
+        size: 100,
+        color: Colors.white.withValues(alpha: 0.35),
+      ),
+    );
+  }
+}
+
+// ── Control Icons ─────────────────────────────────────────────────────────────
+
+class _ControlIcon extends StatefulWidget {
+  final dynamic icon;
   final VoidCallback? onTap;
   final double size;
   final bool isActive;
 
-  const _NeuIconBtn({
+  const _ControlIcon({
     required this.icon,
     this.onTap,
     this.size = 24,
@@ -360,10 +568,10 @@ class _NeuIconBtn extends StatefulWidget {
   });
 
   @override
-  State<_NeuIconBtn> createState() => _NeuIconBtnState();
+  State<_ControlIcon> createState() => _ControlIconState();
 }
 
-class _NeuIconBtnState extends State<_NeuIconBtn> {
+class _ControlIconState extends State<_ControlIcon> {
   bool _pressed = false;
 
   @override
@@ -375,116 +583,15 @@ class _NeuIconBtnState extends State<_NeuIconBtn> {
         widget.onTap?.call();
       },
       onTapCancel: () => setState(() => _pressed = false),
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 120),
-        width: 48,
-        height: 48,
-        decoration: _pressed
-            ? Neumorphic.pressed(radius: 14)
-            : Neumorphic.raised(radius: 14),
-        child: Icon(
-          widget.icon,
-          size: widget.size,
-          color: widget.isActive ? AppColors.primary : AppColors.textSecondary,
-        ),
-      ),
-    );
-  }
-}
-
-// ── Play/Pause big button ─────────────────────────────────────────────────────
-
-class _PlayPauseButton extends StatefulWidget {
-  final bool isPlaying;
-  final bool isLoading;
-  final VoidCallback? onPressed;
-
-  const _PlayPauseButton({
-    required this.isPlaying,
-    required this.isLoading,
-    this.onPressed,
-  });
-
-  @override
-  State<_PlayPauseButton> createState() => _PlayPauseButtonState();
-}
-
-class _PlayPauseButtonState extends State<_PlayPauseButton>
-    with TickerProviderStateMixin {
-  late AnimationController _pulseController;
-  late Animation<double> _pulseAnim;
-  bool _pressed = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _pulseController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 900),
-    );
-    _pulseAnim = Tween<double>(begin: 0.92, end: 1.0).animate(
-      CurvedAnimation(parent: _pulseController, curve: Curves.easeInOut),
-    );
-    if (widget.isLoading) _pulseController.repeat(reverse: true);
-  }
-
-  @override
-  void didUpdateWidget(_PlayPauseButton oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (widget.isLoading && !oldWidget.isLoading) {
-      _pulseController.repeat(reverse: true);
-    } else if (!widget.isLoading && oldWidget.isLoading) {
-      _pulseController.stop();
-      _pulseController.animateTo(1.0);
-    }
-  }
-
-  @override
-  void dispose() {
-    _pulseController.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTapDown: (_) => setState(() => _pressed = true),
-      onTapUp: (_) {
-        setState(() => _pressed = false);
-        widget.onPressed?.call();
-      },
-      onTapCancel: () => setState(() => _pressed = false),
-      child: AnimatedBuilder(
-        animation: _pulseAnim,
-        builder: (context, child) {
-          return AnimatedContainer(
-            duration: const Duration(milliseconds: 120),
-            width: 72,
-            height: 72,
-            decoration: _pressed
-                ? Neumorphic.pressed(radius: 36, color: AppColors.background)
-                : Neumorphic.raisedAccent(
-                    radius: 36, accent: AppColors.primary),
-            child: child,
-          );
-        },
-        child: Center(
-          child: AnimatedSwitcher(
-            duration: const Duration(milliseconds: 200),
-            switchInCurve: Curves.easeIn,
-            switchOutCurve: Curves.easeOut,
-            transitionBuilder: (child, anim) => ScaleTransition(
-              scale: anim,
-              child: FadeTransition(opacity: anim, child: child),
-            ),
-            child: Icon(
-              widget.isPlaying
-                  ? Icons.pause_rounded
-                  : Icons.play_arrow_rounded,
-              key: ValueKey(widget.isPlaying),
-              size: 36,
-              color: Colors.white,
-            ),
+      child: AnimatedOpacity(
+        opacity: _pressed ? 0.5 : 1.0,
+        duration: const Duration(milliseconds: 100),
+        child: Padding(
+          padding: const EdgeInsets.all(8),
+          child: HugeIcon(
+            icon: widget.icon,
+            size: widget.size,
+            color: widget.isActive ? AppColors.primary : AppColors.textSecondary,
           ),
         ),
       ),
@@ -492,14 +599,108 @@ class _PlayPauseButtonState extends State<_PlayPauseButton>
   }
 }
 
-// ── Text action button ────────────────────────────────────────────────────────
+// ── Big Play/Pause ────────────────────────────────────────────────────────────
 
-class _NeuTextAction extends StatelessWidget {
-  final IconData icon;
+class _BigPlayPause extends StatefulWidget {
+  final bool isPlaying;
+  final bool isLoading;
+  final VoidCallback? onPressed;
+
+  const _BigPlayPause({
+    required this.isPlaying,
+    required this.isLoading,
+    this.onPressed,
+  });
+
+  @override
+  State<_BigPlayPause> createState() => _BigPlayPauseState();
+}
+
+class _BigPlayPauseState extends State<_BigPlayPause>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _scaleCtrl;
+  late Animation<double> _scaleAnim;
+
+  @override
+  void initState() {
+    super.initState();
+    _scaleCtrl = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 100),
+      lowerBound: 0.9,
+      upperBound: 1.0,
+      value: 1.0,
+    );
+    _scaleAnim = _scaleCtrl;
+  }
+
+  @override
+  void dispose() {
+    _scaleCtrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTapDown: (_) => _scaleCtrl.reverse(),
+      onTapUp: (_) {
+        _scaleCtrl.forward();
+        widget.onPressed?.call();
+      },
+      onTapCancel: () => _scaleCtrl.forward(),
+      child: ScaleTransition(
+        scale: _scaleAnim,
+        child: Container(
+          width: 72,
+          height: 72,
+          decoration: BoxDecoration(
+            color: Colors.white,
+            shape: BoxShape.circle,
+            boxShadow: [
+              BoxShadow(
+                color: Colors.white.withValues(alpha: 0.2),
+                blurRadius: 24,
+                spreadRadius: 2,
+              ),
+            ],
+          ),
+          child: widget.isLoading
+              ? const Center(
+                  child: SizedBox(
+                    width: 24,
+                    height: 24,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2.5,
+                      color: AppColors.background,
+                    ),
+                  ),
+                )
+              : Center(
+                  child: AnimatedSwitcher(
+                    duration: const Duration(milliseconds: 200),
+                    child: HugeIcon(
+                      icon: widget.isPlaying ? HugeIcons.strokeRoundedPause : HugeIcons.strokeRoundedPlay,
+                      key: ValueKey(widget.isPlaying),
+                      size: 38,
+                      color: AppColors.background,
+                    ),
+                  ),
+                ),
+        ),
+      ),
+    );
+  }
+}
+
+// ── Text Action ───────────────────────────────────────────────────────────────
+
+class _TextAction extends StatelessWidget {
+  final dynamic icon;
   final String label;
   final VoidCallback? onTap;
 
-  const _NeuTextAction({
+  const _TextAction({
     required this.icon,
     required this.label,
     this.onTap,
@@ -511,13 +712,19 @@ class _NeuTextAction extends StatelessWidget {
       onTap: onTap,
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-        decoration: Neumorphic.raised(radius: 14),
+        decoration: GlassCard.card(radius: 14),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(icon, size: 18, color: AppColors.textSecondary),
+            HugeIcon(icon: icon, size: 16, color: AppColors.textSecondary),
             const SizedBox(width: 8),
-            Text(label, style: AppTypography.body.copyWith(fontSize: 13)),
+            Text(
+              label,
+              style: AppTypography.bodyMedium.copyWith(
+                fontSize: 13,
+                color: AppColors.textSecondary,
+              ),
+            ),
           ],
         ),
       ),

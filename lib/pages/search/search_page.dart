@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:hugeicons/hugeicons.dart';
 import 'package:provider/provider.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_typography.dart';
-import '../../core/theme/neumorphic.dart';
+import '../../core/theme/glass_card.dart';
 import '../../providers/song_provider.dart';
 import '../../providers/audio_provider.dart';
 import '../../data/database/app_database.dart';
@@ -17,7 +18,17 @@ class SearchPage extends StatefulWidget {
 
 class _SearchPageState extends State<SearchPage> {
   final TextEditingController _searchController = TextEditingController();
+  final FocusNode _focusNode = FocusNode();
   List<Song> _searchResults = [];
+
+  @override
+  void initState() {
+    super.initState();
+    // Auto-focus when tab is selected
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _focusNode.requestFocus();
+    });
+  }
 
   void _onSearchChanged(String query) {
     if (query.isEmpty) {
@@ -40,6 +51,7 @@ class _SearchPageState extends State<SearchPage> {
   @override
   void dispose() {
     _searchController.dispose();
+    _focusNode.dispose();
     super.dispose();
   }
 
@@ -48,101 +60,124 @@ class _SearchPageState extends State<SearchPage> {
     final audioProvider = context.watch<AudioProvider>();
 
     return Scaffold(
-      appBar: AppBar(
-        leading: Builder(
-          builder: (context) => IconButton(
-            icon: const Icon(Icons.menu_rounded),
-            onPressed: () =>
-                context.findRootAncestorStateOfType<ScaffoldState>()?.openDrawer(),
-          ),
-        ),
-        title: Text('Search', style: AppTypography.heading),
-      ),
-      body: Column(
-        children: [
-          // Neumorphic search bar
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
-            child: Container(
-              decoration: Neumorphic.pressed(radius: 14),
-              child: Row(
-                children: [
-                  const SizedBox(width: 14),
-                  const Icon(Icons.search_rounded,
-                      color: AppColors.textSecondary, size: 20),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: TextField(
-                      controller: _searchController,
-                      onChanged: _onSearchChanged,
-                      style: AppTypography.body,
-                      cursorColor: AppColors.primary,
-                      autofocus: true,
-                      decoration: InputDecoration(
-                        hintText: 'Search songs, artists...',
-                        hintStyle: AppTypography.caption,
-                        border: InputBorder.none,
-                        contentPadding:
-                            const EdgeInsets.symmetric(vertical: 14),
+      backgroundColor: AppColors.background,
+      body: SafeArea(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Header
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 20, 20, 16),
+              child: Text('Search', style: AppTypography.display.copyWith(fontSize: 28)),
+            ),
+            // Search bar
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+              child: Container(
+                decoration: GlassCard.card(radius: 16),
+                child: Row(
+                  children: [
+                    const SizedBox(width: 16),
+                    const HugeIcon(icon: HugeIcons.strokeRoundedSearch01, color: AppColors.textDisabled, size: 20),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: TextField(
+                        controller: _searchController,
+                        focusNode: _focusNode,
+                        onChanged: _onSearchChanged,
+                        style: AppTypography.body,
+                        cursorColor: AppColors.primary,
+                        decoration: InputDecoration(
+                          hintText: 'Songs, artists, albums...',
+                          hintStyle: AppTypography.caption,
+                          border: InputBorder.none,
+                          contentPadding: const EdgeInsets.symmetric(vertical: 16),
+                        ),
                       ),
                     ),
-                  ),
-                  if (_searchController.text.isNotEmpty)
-                    IconButton(
-                      icon: const Icon(Icons.clear_rounded,
-                          color: AppColors.textSecondary, size: 18),
-                      onPressed: () {
-                        _searchController.clear();
-                        _onSearchChanged('');
-                      },
-                    ),
-                ],
-              ),
-            ),
-          ),
-          Expanded(
-            child: _searchController.text.isEmpty
-                ? Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Container(
-                          width: 80,
-                          height: 80,
-                          decoration: Neumorphic.raisedCircle(),
-                          child: const Icon(
-                            Icons.search_rounded,
-                            size: 36,
-                            color: AppColors.textDisabled,
-                          ),
-                        ),
-                        const SizedBox(height: 16),
-                        Text('Search your library',
-                            style: AppTypography.caption),
-                      ],
-                    ),
-                  )
-                : _searchResults.isEmpty
-                    ? Center(
-                        child: Text('No results found',
-                            style: AppTypography.caption),
-                      )
-                    : ListView.builder(
-                        padding: const EdgeInsets.only(bottom: 80),
-                        itemCount: _searchResults.length,
-                        itemBuilder: (context, index) {
-                          final song = _searchResults[index];
-                          return SongTile(
-                            song: song,
-                            isPlaying:
-                                audioProvider.currentSong?.id == song.id,
-                            onTap: () {
-                              audioProvider.playAllSongs(_searchResults,
-                                  startIndex: index);
-                            },
-                          );
+                    if (_searchController.text.isNotEmpty)
+                      IconButton(
+                        icon: const HugeIcon(icon: HugeIcons.strokeRoundedCancel01,
+                            color: AppColors.textSecondary, size: 18),
+                        onPressed: () {
+                          _searchController.clear();
+                          _onSearchChanged('');
                         },
                       ),
+                  ],
+                ),
+              ),
+            ),
+            // Results
+            Expanded(
+              child: _searchController.text.isEmpty
+                  ? _buildIdleState()
+                  : _searchResults.isEmpty
+                      ? _buildNoResults()
+                      : ListView.builder(
+                          padding: const EdgeInsets.only(bottom: 20),
+                          itemCount: _searchResults.length,
+                          itemBuilder: (context, index) {
+                            final song = _searchResults[index];
+                            return SongTile(
+                              song: song,
+                              isPlaying: audioProvider.currentSong?.id == song.id,
+                              onTap: () {
+                                audioProvider.playAllSongs(
+                                  _searchResults,
+                                  startIndex: index,
+                                );
+                              },
+                            );
+                          },
+                        ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildIdleState() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Container(
+            width: 80,
+            height: 80,
+            decoration: BoxDecoration(
+              gradient: const LinearGradient(
+                colors: [AppColors.primary, AppColors.accent],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              borderRadius: BorderRadius.circular(24),
+            ),
+            child: const HugeIcon(icon: HugeIcons.strokeRoundedSearch01, size: 36, color: Colors.white),
+          ),
+          const SizedBox(height: 20),
+          Text('Find your music', style: AppTypography.heading),
+          const SizedBox(height: 8),
+          Text(
+            'Search by song, artist or album',
+            style: AppTypography.caption,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildNoResults() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Text('No results for', style: AppTypography.caption),
+          const SizedBox(height: 4),
+          Text(
+            '"${_searchController.text}"',
+            style: AppTypography.heading.copyWith(color: AppColors.primary),
           ),
         ],
       ),

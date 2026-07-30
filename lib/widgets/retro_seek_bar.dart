@@ -32,106 +32,74 @@ class _RetroSeekBarState extends State<RetroSeekBar> {
         ? _dragValue
         : widget.position.inMilliseconds.toDouble();
 
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Stack(
-          alignment: Alignment.center,
-          children: [
-            // Neumorphic track container
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24),
-              child: Container(
-                height: 8,
-                decoration: BoxDecoration(
-                  color: AppColors.surfaceLight, // changed from background to make it slightly visible
-                  borderRadius: BorderRadius.circular(4),
-                  boxShadow: const [
-                    BoxShadow(
-                      color: AppColors.shadowDark,
-                      offset: Offset(2, 2),
-                      blurRadius: 4,
-                    ),
-                    BoxShadow(
-                      color: AppColors.shadowLight,
-                      offset: Offset(-2, -2),
-                      blurRadius: 4,
-                    ),
-                  ],
-                ),
-                clipBehavior: Clip.hardEdge,
-                child: duration > 0
-                    ? FractionallySizedBox(
-                        alignment: Alignment.centerLeft,
-                        widthFactor: (position / duration).clamp(0.0, 1.0),
-                        child: Container(
-                          decoration: const BoxDecoration(
-                            gradient: LinearGradient(
-                              colors: [AppColors.primary, AppColors.accent],
-                            ),
-                          ),
-                        ),
-                      )
-                    : const SizedBox.shrink(),
-              ),
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 8),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          SliderTheme(
+            data: SliderTheme.of(context).copyWith(
+              activeTrackColor: AppColors.primary,
+              inactiveTrackColor: AppColors.surfaceBorder,
+              thumbColor: Colors.white,
+              thumbShape: _SpotifyThumb(),
+              trackHeight: 3,
+              overlayColor: AppColors.primary.withValues(alpha: 0.2),
+              overlayShape: const RoundSliderOverlayShape(overlayRadius: 16),
+              trackShape: const RoundedRectSliderTrackShape(),
             ),
-            // Invisible slider on top for interaction
-            SliderTheme(
-              data: SliderTheme.of(context).copyWith(
-                activeTrackColor: Colors.transparent,
-                inactiveTrackColor: Colors.transparent,
-                thumbColor: AppColors.primary,
-                thumbShape: _NeuThumbShape(),
-                trackHeight: 8,
-                overlayColor: AppColors.primary.withValues(alpha: 0.15),
-              ),
-              child: Slider(
-                min: 0,
-                max: duration > 0 ? duration : 1,
-                value: position.clamp(0, duration > 0 ? duration : 1),
-                onChangeStart: (value) {
-                  setState(() {
-                    _isDragging = true;
-                    _dragValue = value;
-                  });
-                },
-                onChanged: (value) {
-                  setState(() => _dragValue = value);
-                  widget.onChanged?.call(Duration(milliseconds: value.toInt()));
-                },
-                onChangeEnd: (value) {
-                  setState(() => _isDragging = false);
-                  widget.onChangeEnd?.call(Duration(milliseconds: value.toInt()));
-                },
-              ),
+            child: Slider(
+              min: 0,
+              max: duration > 0 ? duration : 1,
+              value: position.clamp(0, duration > 0 ? duration : 1),
+              onChangeStart: (value) {
+                setState(() {
+                  _isDragging = true;
+                  _dragValue = value;
+                });
+              },
+              onChanged: (value) {
+                setState(() => _dragValue = value);
+                widget.onChanged?.call(Duration(milliseconds: value.toInt()));
+              },
+              onChangeEnd: (value) {
+                setState(() => _isDragging = false);
+                widget.onChangeEnd?.call(Duration(milliseconds: value.toInt()));
+              },
             ),
-          ],
-        ),
-        // Time labels
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 28),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                formatDuration(position.toInt()),
-                style: AppTypography.caption,
-              ),
-              Text(
-                formatDuration(widget.duration.inMilliseconds),
-                style: AppTypography.caption,
-              ),
-            ],
           ),
-        ),
-      ],
+          // Time labels
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  formatDuration(position.toInt()),
+                  style: AppTypography.caption.copyWith(
+                    fontSize: 11,
+                    color: AppColors.textSecondary,
+                  ),
+                ),
+                Text(
+                  formatDuration(widget.duration.inMilliseconds),
+                  style: AppTypography.caption.copyWith(
+                    fontSize: 11,
+                    color: AppColors.textSecondary,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
 
-class _NeuThumbShape extends SliderComponentShape {
+class _SpotifyThumb extends SliderComponentShape {
   @override
-  Size getPreferredSize(bool isEnabled, bool isDiscrete) => const Size(18, 18);
+  Size getPreferredSize(bool isEnabled, bool isDiscrete) => const Size(14, 14);
 
   @override
   void paint(
@@ -149,29 +117,15 @@ class _NeuThumbShape extends SliderComponentShape {
     required Size sizeWithOverflow,
   }) {
     final canvas = context.canvas;
+    final radius = 7.0 + 3.0 * activationAnimation.value;
 
-    // Dark shadow
+    // Subtle shadow
     canvas.drawCircle(
-      center + const Offset(3, 3),
-      10,
-      Paint()..color = AppColors.shadowDark,
+      center + const Offset(0, 2),
+      radius,
+      Paint()..color = Colors.black.withValues(alpha: 0.3),
     );
-    // Light shadow
-    canvas.drawCircle(
-      center + const Offset(-3, -3),
-      10,
-      Paint()..color = AppColors.shadowLight,
-    );
-    // Base circle
-    canvas.drawCircle(center, 10, Paint()..color = AppColors.background);
-    // Accent dot
-    canvas.drawCircle(
-      center,
-      5,
-      Paint()
-        ..shader = RadialGradient(
-          colors: [AppColors.primary, AppColors.accent],
-        ).createShader(Rect.fromCircle(center: center, radius: 5)),
-    );
+    // White circle
+    canvas.drawCircle(center, radius, Paint()..color = Colors.white);
   }
 }

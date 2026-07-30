@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
-import '../../core/theme/app_colors.dart';
-import '../../core/theme/app_typography.dart';
-import '../../core/theme/neumorphic.dart';
+import 'package:hugeicons/hugeicons.dart';
+import '../core/theme/app_colors.dart';
+import '../core/theme/app_typography.dart';
+import '../core/theme/glass_card.dart';
 
+/// Modern action button replacing the old neumorphic RetroButton.
 class RetroButton extends StatefulWidget {
   final String label;
-  final IconData? icon;
+  final dynamic icon;
   final VoidCallback? onPressed;
   final Color? color;
   final bool isSmall;
@@ -25,54 +27,79 @@ class RetroButton extends StatefulWidget {
 
 class _RetroButtonState extends State<RetroButton>
     with SingleTickerProviderStateMixin {
-  bool _isPressed = false;
+  late AnimationController _ctrl;
+  late Animation<double> _scale;
+
+  @override
+  void initState() {
+    super.initState();
+    _ctrl = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 100),
+      lowerBound: 0.94,
+      upperBound: 1.0,
+      value: 1.0,
+    );
+    _scale = _ctrl;
+  }
+
+  @override
+  void dispose() {
+    _ctrl.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     final accent = widget.color ?? AppColors.primary;
+    final useAccentGradient = accent == AppColors.primary || accent == AppColors.accent;
 
     return GestureDetector(
-      onTapDown: (_) => setState(() => _isPressed = true),
+      onTapDown: (_) => _ctrl.reverse(),
       onTapUp: (_) {
-        setState(() => _isPressed = false);
+        _ctrl.forward();
         widget.onPressed?.call();
       },
-      onTapCancel: () => setState(() => _isPressed = false),
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 120),
-        padding: EdgeInsets.symmetric(
-          horizontal: widget.isSmall ? 14 : 22,
-          vertical: widget.isSmall ? 9 : 13,
-        ),
-        decoration: _isPressed
-            ? Neumorphic.pressed(
-                radius: widget.isSmall ? 14 : 22,
-                color: AppColors.background,
-              )
-            : Neumorphic.raisedAccent(
-                radius: widget.isSmall ? 14 : 22,
-                accent: accent,
+      onTapCancel: () => _ctrl.forward(),
+      child: ScaleTransition(
+        scale: _scale,
+        child: Container(
+          padding: EdgeInsets.symmetric(
+            horizontal: widget.isSmall ? 14 : 22,
+            vertical: widget.isSmall ? 10 : 14,
+          ),
+          decoration: useAccentGradient
+              ? GlassCard.accent(
+                  radius: widget.isSmall ? 12 : 16,
+                  accentColor: accent,
+                )
+              : BoxDecoration(
+                  color: accent,
+                  borderRadius:
+                      BorderRadius.circular(widget.isSmall ? 12 : 16),
+                ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              if (widget.icon != null) ...[
+                HugeIcon(
+                  icon: widget.icon,
+                  size: widget.isSmall ? 16 : 20,
+                  color: Colors.white,
+                ),
+                SizedBox(width: widget.isSmall ? 6 : 10),
+              ],
+              Text(
+                widget.label,
+                style: AppTypography.bodyMedium.copyWith(
+                  fontSize: widget.isSmall ? 12 : 14,
+                  color: Colors.white,
+                  fontWeight: FontWeight.w700,
+                ),
               ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            if (widget.icon != null) ...[
-              Icon(
-                widget.icon,
-                size: widget.isSmall ? 16 : 20,
-                color: Colors.white,
-              ),
-              SizedBox(width: widget.isSmall ? 6 : 10),
             ],
-            Text(
-              widget.label,
-              style: AppTypography.body.copyWith(
-                fontSize: widget.isSmall ? 12 : 14,
-                color: Colors.white,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ],
+          ),
         ),
       ),
     );
