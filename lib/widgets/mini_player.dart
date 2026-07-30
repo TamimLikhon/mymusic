@@ -3,7 +3,6 @@ import 'dart:ui';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:audio_metadata_reader/audio_metadata_reader.dart';
-import 'package:flutter/material.dart';
 import 'package:hugeicons/hugeicons.dart';
 import 'package:provider/provider.dart';
 import '../core/theme/app_colors.dart';
@@ -89,10 +88,11 @@ class _MiniPlayerContent extends StatelessWidget {
                       ValueListenableBuilder<Duration>(
                         valueListenable: audioProvider.positionNotifier,
                         builder: (context, position, _) {
-                          final progress = audioProvider.duration.inMilliseconds > 0
+                          final progress =
+                              audioProvider.duration.inMilliseconds > 0
                               ? (position.inMilliseconds /
-                                      audioProvider.duration.inMilliseconds)
-                                  .clamp(0.0, 1.0)
+                                        audioProvider.duration.inMilliseconds)
+                                    .clamp(0.0, 1.0)
                               : 0.0;
                           return FractionallySizedBox(
                             widthFactor: progress,
@@ -177,11 +177,7 @@ class _FlatIconButton extends StatelessWidget {
   final VoidCallback? onPressed;
   final double size;
 
-  const _FlatIconButton({
-    required this.icon,
-    this.onPressed,
-    this.size = 22,
-  });
+  const _FlatIconButton({required this.icon, this.onPressed, this.size = 22});
 
   @override
   Widget build(BuildContext context) {
@@ -232,7 +228,9 @@ class _PlayPauseBtn extends StatelessWidget {
         child: AnimatedSwitcher(
           duration: const Duration(milliseconds: 200),
           child: HugeIcon(
-            icon: isPlaying ? HugeIcons.strokeRoundedPause : HugeIcons.strokeRoundedPlay,
+            icon: isPlaying
+                ? HugeIcons.strokeRoundedPause
+                : HugeIcons.strokeRoundedPlay,
             key: ValueKey(isPlaying),
             size: 22,
             color: Colors.white,
@@ -289,7 +287,7 @@ class _MiniPlayerArtState extends State<_MiniPlayerArt> {
       try {
         final metadata = readMetadata(File(path), getImage: true);
         final pictures = metadata.pictures;
-        if (pictures != null && pictures.isNotEmpty) {
+        if (pictures.isNotEmpty) {
           return pictures.first.bytes;
         }
       } catch (_) {}

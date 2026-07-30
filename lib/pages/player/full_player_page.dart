@@ -119,7 +119,8 @@ class FullPlayerPage extends StatelessWidget {
               width: 36,
               height: 36,
               decoration: GlassCard.card(radius: 10),
-              child: const HugeIcon(icon: HugeIcons.strokeRoundedArrowDown01,
+              child: const HugeIcon(
+                icon: HugeIcons.strokeRoundedArrowDown01,
                 color: AppColors.textSecondary,
                 size: 24,
               ),
@@ -130,7 +131,11 @@ class FullPlayerPage extends StatelessWidget {
     );
   }
 
-  Widget _buildArtCard(AudioProvider audioProvider, List<Color> colors, dynamic song) {
+  Widget _buildArtCard(
+    AudioProvider audioProvider,
+    List<Color> colors,
+    dynamic song,
+  ) {
     return _SongArtCard(
       audioProvider: audioProvider,
       colors: colors,
@@ -226,7 +231,8 @@ class FullPlayerPage extends StatelessWidget {
           _ControlIcon(
             icon: _getRepeatIcon(audioProvider.queueState.repeatMode),
             onTap: audioProvider.toggleRepeat,
-            isActive: audioProvider.queueState.repeatMode != queue.RepeatMode.none,
+            isActive:
+                audioProvider.queueState.repeatMode != queue.RepeatMode.none,
           ),
         ],
       ),
@@ -253,7 +259,11 @@ class FullPlayerPage extends StatelessWidget {
           _TextAction(
             icon: HugeIcons.strokeRoundedTag01,
             label: 'Tag',
-            onTap: () => AssignTagSheet.show(context, song.id as String, song.title as String),
+            onTap: () => AssignTagSheet.show(
+              context,
+              song.id as String,
+              song.title as String,
+            ),
           ),
           _TextAction(
             icon: HugeIcons.strokeRoundedImage01,
@@ -280,7 +290,9 @@ class FullPlayerPage extends StatelessWidget {
           content: Text('Thumbnail set for ${song.title}'),
           backgroundColor: AppColors.primary,
           behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
         ),
       );
     }
@@ -324,7 +336,8 @@ class FullPlayerPage extends StatelessWidget {
                         width: 36,
                         height: 36,
                         decoration: GlassCard.card(radius: 10),
-                        child: const HugeIcon(icon: HugeIcons.strokeRoundedPlaylist01,
+                        child: const HugeIcon(
+                          icon: HugeIcons.strokeRoundedPlaylist01,
                           color: AppColors.primary,
                           size: 18,
                         ),
@@ -332,10 +345,7 @@ class FullPlayerPage extends StatelessWidget {
                       const SizedBox(width: 12),
                       Text('Up Next', style: AppTypography.heading),
                       const Spacer(),
-                      Text(
-                        '${q.length} songs',
-                        style: AppTypography.caption,
-                      ),
+                      Text('${q.length} songs', style: AppTypography.caption),
                     ],
                   ),
                 ),
@@ -350,8 +360,10 @@ class FullPlayerPage extends StatelessWidget {
                       final isCurrent = index == currentIndex;
                       final colors = AppColors.seedGradient(s.title);
                       return ListTile(
-                        contentPadding:
-                            const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 20,
+                          vertical: 4,
+                        ),
                         leading: Container(
                           width: 42,
                           height: 42,
@@ -368,14 +380,19 @@ class FullPlayerPage extends StatelessWidget {
                           ),
                           child: Center(
                             child: isCurrent
-                                ? const HugeIcon(icon: HugeIcons.strokeRoundedMusicNote01,
+                                ? const HugeIcon(
+                                    icon: HugeIcons.strokeRoundedMusicNote01,
                                     size: 18,
                                     color: Colors.white,
                                   )
                                 : Text(
-                                    s.title.isNotEmpty ? s.title[0].toUpperCase() : '♪',
+                                    s.title.isNotEmpty
+                                        ? s.title[0].toUpperCase()
+                                        : '♪',
                                     style: AppTypography.heading.copyWith(
-                                      color: Colors.white.withValues(alpha: 0.9),
+                                      color: Colors.white.withValues(
+                                        alpha: 0.9,
+                                      ),
                                       fontSize: 16,
                                     ),
                                   ),
@@ -385,7 +402,9 @@ class FullPlayerPage extends StatelessWidget {
                           s.title,
                           style: AppTypography.bodyMedium.copyWith(
                             fontSize: 13,
-                            color: isCurrent ? AppColors.primary : AppColors.textPrimary,
+                            color: isCurrent
+                                ? AppColors.primary
+                                : AppColors.textPrimary,
                           ),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
@@ -397,8 +416,11 @@ class FullPlayerPage extends StatelessWidget {
                           overflow: TextOverflow.ellipsis,
                         ),
                         trailing: isCurrent
-                            ? const HugeIcon(icon: HugeIcons.strokeRoundedMusicNote01,
-                                color: AppColors.primary, size: 18)
+                            ? const HugeIcon(
+                                icon: HugeIcons.strokeRoundedMusicNote01,
+                                color: AppColors.primary,
+                                size: 18,
+                              )
                             : Text(
                                 '${index + 1}',
                                 style: AppTypography.caption,
@@ -554,7 +576,7 @@ class _SongArtCardState extends State<_SongArtCard> {
       try {
         final metadata = readMetadata(File(path), getImage: true);
         final pictures = metadata.pictures;
-        if (pictures != null && pictures.isNotEmpty) {
+        if (pictures.isNotEmpty) {
           return pictures.first.bytes;
         }
       } catch (_) {}
@@ -593,10 +615,7 @@ class _SongArtCardState extends State<_SongArtCard> {
               if (snapshot.hasData && snapshot.data != null) {
                 return ClipRRect(
                   borderRadius: BorderRadius.circular(24),
-                  child: Image.memory(
-                    snapshot.data!,
-                    fit: BoxFit.cover,
-                  ),
+                  child: Image.memory(snapshot.data!, fit: BoxFit.cover),
                 );
               }
 
@@ -605,12 +624,12 @@ class _SongArtCardState extends State<_SongArtCard> {
                 child: widget.audioProvider.isPlaying
                     ? const Column(
                         mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          _StaticVinylIcon(),
-                        ],
+                        children: [_StaticVinylIcon()],
                       )
                     : Text(
-                        widget.song.title.isNotEmpty ? widget.song.title[0].toUpperCase() : '♪',
+                        widget.song.title.isNotEmpty
+                            ? widget.song.title[0].toUpperCase()
+                            : '♪',
                         style: TextStyle(
                           color: Colors.white.withValues(alpha: 0.9),
                           fontSize: 96,
@@ -665,7 +684,9 @@ class _ControlIconState extends State<_ControlIcon> {
           child: HugeIcon(
             icon: widget.icon,
             size: widget.size,
-            color: widget.isActive ? AppColors.primary : AppColors.textSecondary,
+            color: widget.isActive
+                ? AppColors.primary
+                : AppColors.textSecondary,
           ),
         ),
       ),
@@ -754,7 +775,9 @@ class _BigPlayPauseState extends State<_BigPlayPause>
                   child: AnimatedSwitcher(
                     duration: const Duration(milliseconds: 200),
                     child: HugeIcon(
-                      icon: widget.isPlaying ? HugeIcons.strokeRoundedPause : HugeIcons.strokeRoundedPlay,
+                      icon: widget.isPlaying
+                          ? HugeIcons.strokeRoundedPause
+                          : HugeIcons.strokeRoundedPlay,
                       key: ValueKey(widget.isPlaying),
                       size: 38,
                       color: AppColors.background,
@@ -774,11 +797,7 @@ class _TextAction extends StatelessWidget {
   final String label;
   final VoidCallback? onTap;
 
-  const _TextAction({
-    required this.icon,
-    required this.label,
-    this.onTap,
-  });
+  const _TextAction({required this.icon, required this.label, this.onTap});
 
   @override
   Widget build(BuildContext context) {

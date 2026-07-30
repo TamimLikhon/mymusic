@@ -1,5 +1,4 @@
 import 'dart:io';
-import 'dart:typed_data';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:audio_metadata_reader/audio_metadata_reader.dart';
@@ -54,8 +53,8 @@ class _SongTileState extends State<SongTile>
           color: _isPressed
               ? AppColors.surface
               : isPlaying
-                  ? AppColors.primaryFaint
-                  : Colors.transparent,
+              ? AppColors.primaryFaint
+              : Colors.transparent,
           borderRadius: BorderRadius.circular(14),
           border: isPlaying
               ? Border.all(
@@ -91,7 +90,11 @@ class _SongTileState extends State<SongTile>
                       ),
               ),
             // Art thumbnail
-            _SongTileArt(song: widget.song, colors: colors, isPlaying: isPlaying),
+            _SongTileArt(
+              song: widget.song,
+              colors: colors,
+              isPlaying: isPlaying,
+            ),
             const SizedBox(width: 12),
             // Song info
             Expanded(
@@ -103,7 +106,9 @@ class _SongTileState extends State<SongTile>
                     style: AppTypography.bodyMedium.copyWith(
                       fontSize: 14,
                       fontWeight: FontWeight.w600,
-                      color: isPlaying ? AppColors.primary : AppColors.textPrimary,
+                      color: isPlaying
+                          ? AppColors.primary
+                          : AppColors.textPrimary,
                     ),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
@@ -182,7 +187,7 @@ class _SongTileArtState extends State<_SongTileArt> {
       try {
         final metadata = readMetadata(File(path), getImage: true);
         final pictures = metadata.pictures;
-        if (pictures != null && pictures.isNotEmpty) {
+        if (pictures.isNotEmpty) {
           return pictures.first.bytes;
         }
       } catch (_) {}
@@ -213,7 +218,7 @@ class _SongTileArtState extends State<_SongTileArt> {
                   color: colors[0].withValues(alpha: 0.5),
                   blurRadius: 12,
                   offset: const Offset(0, 4),
-                )
+                ),
               ]
             : null,
       ),
