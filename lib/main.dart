@@ -23,6 +23,7 @@ void main() async {
   runApp(
     MultiProvider(
       providers: [
+        Provider<AppDatabase>.value(value: database),
         ChangeNotifierProvider(create: (_) => SongProvider(database)),
         ChangeNotifierProvider(create: (_) => TagProvider(database)),
         ChangeNotifierProvider(create: (_) => AudioProvider(database)),

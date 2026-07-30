@@ -12,6 +12,7 @@ class Songs extends Table {
   IntColumn get file_size => integer().withDefault(const Constant(0))();
   IntColumn get added_at => integer()();
   IntColumn get last_played => integer().nullable()();
+  TextColumn get custom_art_path => text().nullable()();
 
   @override
   Set<Column> get primaryKey => {id};

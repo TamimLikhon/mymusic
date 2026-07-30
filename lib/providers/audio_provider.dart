@@ -25,6 +25,8 @@ class AudioProvider extends ChangeNotifier {
   Song? get currentSong => _queueState.currentSong;
   AudioPlayer get player => _player;
 
+  final ValueNotifier<Duration> positionNotifier = ValueNotifier(Duration.zero);
+
   AudioProvider(this._db) {
     _initService();
   }
@@ -38,7 +40,7 @@ class AudioProvider extends ChangeNotifier {
   void _initStreams() {
     _service.positionStream.listen((pos) {
       _position = pos;
-      notifyListeners();
+      positionNotifier.value = pos;
     });
 
     _service.durationStream.listen((dur) {
@@ -213,6 +215,7 @@ class AudioProvider extends ChangeNotifier {
     await _service.stop();
     _isPlaying = false;
     _position = Duration.zero;
+    positionNotifier.value = Duration.zero;
     notifyListeners();
   }
 

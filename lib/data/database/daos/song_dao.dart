@@ -30,6 +30,11 @@ class SongDao extends DatabaseAccessor<AppDatabase> with _$SongDaoMixin {
     ));
   }
 
+  Future<void> updateCustomArt(String songId, String? artPath) {
+    return (update(songs)..where((s) => s.id.equals(songId)))
+        .write(SongsCompanion(custom_art_path: Value(artPath)));
+  }
+
   Future<int> deleteSong(String songId) =>
       (delete(songs)..where((s) => s.id.equals(songId))).go();
 

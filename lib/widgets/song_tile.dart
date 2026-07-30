@@ -1,4 +1,8 @@
+import 'dart:io';
+import 'dart:typed_data';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:audio_metadata_reader/audio_metadata_reader.dart';
 import '../core/theme/app_colors.dart';
 import '../core/theme/app_typography.dart';
 import '../core/utils/duration_formatter.dart';
@@ -86,8 +90,8 @@ class _SongTileState extends State<SongTile>
                         textAlign: TextAlign.center,
                       ),
               ),
-            // Art placeholder
-            _buildArt(colors, isPlaying),
+            // Art thumbnail
+            _SongTileArt(song: widget.song, colors: colors, isPlaying: isPlaying),
             const SizedBox(width: 12),
             // Song info
             Expanded(
@@ -127,8 +131,70 @@ class _SongTileState extends State<SongTile>
       ),
     );
   }
+}
 
-  Widget _buildArt(List<Color> colors, bool isPlaying) {
+// ── Song Tile Art ─────────────────────────────────────────────────────────────
+
+class _SongTileArt extends StatefulWidget {
+  final Song song;
+  final List<Color> colors;
+  final bool isPlaying;
+
+  const _SongTileArt({
+    required this.song,
+    required this.colors,
+    required this.isPlaying,
+  });
+
+  @override
+  State<_SongTileArt> createState() => _SongTileArtState();
+}
+
+class _SongTileArtState extends State<_SongTileArt> {
+  Future<Uint8List?>? _imageFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadImage();
+  }
+
+  @override
+  void didUpdateWidget(covariant _SongTileArt old) {
+    super.didUpdateWidget(old);
+    if (old.song.id != widget.song.id ||
+        old.song.custom_art_path != widget.song.custom_art_path) {
+      _loadImage();
+    }
+  }
+
+  void _loadImage() {
+    // Prefer custom art set by user
+    final customArt = widget.song.custom_art_path;
+    if (customArt != null) {
+      _imageFuture = Future.value(File(customArt).readAsBytesSync());
+      return;
+    }
+
+    // Fallback: read embedded metadata art in a background isolate
+    final filePath = widget.song.file_path;
+    _imageFuture = compute((path) {
+      try {
+        final metadata = readMetadata(File(path), getImage: true);
+        final pictures = metadata.pictures;
+        if (pictures != null && pictures.isNotEmpty) {
+          return pictures.first.bytes;
+        }
+      } catch (_) {}
+      return null;
+    }, filePath);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = widget.colors;
+    final isPlaying = widget.isPlaying;
+
     return AnimatedContainer(
       duration: const Duration(milliseconds: 250),
       curve: Curves.easeOut,
@@ -151,24 +217,64 @@ class _SongTileState extends State<SongTile>
               ]
             : null,
       ),
-      child: Center(
-        child: isPlaying
-            ? AnimatedBars(
-                isPlaying: true,
-                width: 20,
-                height: 20,
-                color: Colors.white.withValues(alpha: 0.9),
-              )
-            : Text(
-                widget.song.title.isNotEmpty
-                    ? widget.song.title[0].toUpperCase()
-                    : '♪',
-                style: AppTypography.heading.copyWith(
-                  color: Colors.white.withValues(alpha: 0.9),
-                  fontWeight: FontWeight.w800,
-                  fontSize: 18,
+      child: FutureBuilder<Uint8List?>(
+        future: _imageFuture,
+        builder: (context, snapshot) {
+          if (snapshot.hasData && snapshot.data != null) {
+            // Show actual art image
+            return Stack(
+              fit: StackFit.expand,
+              children: [
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(12),
+                  child: Image.memory(
+                    snapshot.data!,
+                    fit: BoxFit.cover,
+                    cacheWidth: 120,
+                    gaplessPlayback: true,
+                  ),
                 ),
-              ),
+                // Playing overlay
+                if (isPlaying)
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(12),
+                    child: Container(
+                      color: Colors.black.withValues(alpha: 0.45),
+                      child: Center(
+                        child: AnimatedBars(
+                          isPlaying: true,
+                          width: 20,
+                          height: 20,
+                          color: Colors.white.withValues(alpha: 0.95),
+                        ),
+                      ),
+                    ),
+                  ),
+              ],
+            );
+          }
+
+          // Fallback: gradient + letter / animated bars
+          return Center(
+            child: isPlaying
+                ? AnimatedBars(
+                    isPlaying: true,
+                    width: 20,
+                    height: 20,
+                    color: Colors.white.withValues(alpha: 0.9),
+                  )
+                : Text(
+                    widget.song.title.isNotEmpty
+                        ? widget.song.title[0].toUpperCase()
+                        : '♪',
+                    style: AppTypography.heading.copyWith(
+                      color: Colors.white.withValues(alpha: 0.9),
+                      fontWeight: FontWeight.w800,
+                      fontSize: 18,
+                    ),
+                  ),
+          );
+        },
       ),
     );
   }

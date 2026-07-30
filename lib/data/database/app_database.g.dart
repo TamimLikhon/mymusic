@@ -102,6 +102,17 @@ class $SongsTable extends Songs with TableInfo<$SongsTable, Song> {
     type: DriftSqlType.int,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _custom_art_pathMeta = const VerificationMeta(
+    'custom_art_path',
+  );
+  @override
+  late final GeneratedColumn<String> custom_art_path = GeneratedColumn<String>(
+    'custom_art_path',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -113,6 +124,7 @@ class $SongsTable extends Songs with TableInfo<$SongsTable, Song> {
     file_size,
     added_at,
     last_played,
+    custom_art_path,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -190,6 +202,15 @@ class $SongsTable extends Songs with TableInfo<$SongsTable, Song> {
         ),
       );
     }
+    if (data.containsKey('custom_art_path')) {
+      context.handle(
+        _custom_art_pathMeta,
+        custom_art_path.isAcceptableOrUnknown(
+          data['custom_art_path']!,
+          _custom_art_pathMeta,
+        ),
+      );
+    }
     return context;
   }
 
@@ -235,6 +256,10 @@ class $SongsTable extends Songs with TableInfo<$SongsTable, Song> {
         DriftSqlType.int,
         data['${effectivePrefix}last_played'],
       ),
+      custom_art_path: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}custom_art_path'],
+      ),
     );
   }
 
@@ -254,6 +279,7 @@ class Song extends DataClass implements Insertable<Song> {
   final int file_size;
   final int added_at;
   final int? last_played;
+  final String? custom_art_path;
   const Song({
     required this.id,
     required this.title,
@@ -264,6 +290,7 @@ class Song extends DataClass implements Insertable<Song> {
     required this.file_size,
     required this.added_at,
     this.last_played,
+    this.custom_art_path,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -278,6 +305,9 @@ class Song extends DataClass implements Insertable<Song> {
     map['added_at'] = Variable<int>(added_at);
     if (!nullToAbsent || last_played != null) {
       map['last_played'] = Variable<int>(last_played);
+    }
+    if (!nullToAbsent || custom_art_path != null) {
+      map['custom_art_path'] = Variable<String>(custom_art_path);
     }
     return map;
   }
@@ -295,6 +325,9 @@ class Song extends DataClass implements Insertable<Song> {
       last_played: last_played == null && nullToAbsent
           ? const Value.absent()
           : Value(last_played),
+      custom_art_path: custom_art_path == null && nullToAbsent
+          ? const Value.absent()
+          : Value(custom_art_path),
     );
   }
 
@@ -313,6 +346,7 @@ class Song extends DataClass implements Insertable<Song> {
       file_size: serializer.fromJson<int>(json['file_size']),
       added_at: serializer.fromJson<int>(json['added_at']),
       last_played: serializer.fromJson<int?>(json['last_played']),
+      custom_art_path: serializer.fromJson<String?>(json['custom_art_path']),
     );
   }
   @override
@@ -328,6 +362,7 @@ class Song extends DataClass implements Insertable<Song> {
       'file_size': serializer.toJson<int>(file_size),
       'added_at': serializer.toJson<int>(added_at),
       'last_played': serializer.toJson<int?>(last_played),
+      'custom_art_path': serializer.toJson<String?>(custom_art_path),
     };
   }
 
@@ -341,6 +376,7 @@ class Song extends DataClass implements Insertable<Song> {
     int? file_size,
     int? added_at,
     Value<int?> last_played = const Value.absent(),
+    Value<String?> custom_art_path = const Value.absent(),
   }) => Song(
     id: id ?? this.id,
     title: title ?? this.title,
@@ -351,6 +387,9 @@ class Song extends DataClass implements Insertable<Song> {
     file_size: file_size ?? this.file_size,
     added_at: added_at ?? this.added_at,
     last_played: last_played.present ? last_played.value : this.last_played,
+    custom_art_path: custom_art_path.present
+        ? custom_art_path.value
+        : this.custom_art_path,
   );
   Song copyWithCompanion(SongsCompanion data) {
     return Song(
@@ -365,6 +404,9 @@ class Song extends DataClass implements Insertable<Song> {
       last_played: data.last_played.present
           ? data.last_played.value
           : this.last_played,
+      custom_art_path: data.custom_art_path.present
+          ? data.custom_art_path.value
+          : this.custom_art_path,
     );
   }
 
@@ -379,7 +421,8 @@ class Song extends DataClass implements Insertable<Song> {
           ..write('file_path: $file_path, ')
           ..write('file_size: $file_size, ')
           ..write('added_at: $added_at, ')
-          ..write('last_played: $last_played')
+          ..write('last_played: $last_played, ')
+          ..write('custom_art_path: $custom_art_path')
           ..write(')'))
         .toString();
   }
@@ -395,6 +438,7 @@ class Song extends DataClass implements Insertable<Song> {
     file_size,
     added_at,
     last_played,
+    custom_art_path,
   );
   @override
   bool operator ==(Object other) =>
@@ -408,7 +452,8 @@ class Song extends DataClass implements Insertable<Song> {
           other.file_path == this.file_path &&
           other.file_size == this.file_size &&
           other.added_at == this.added_at &&
-          other.last_played == this.last_played);
+          other.last_played == this.last_played &&
+          other.custom_art_path == this.custom_art_path);
 }
 
 class SongsCompanion extends UpdateCompanion<Song> {
@@ -421,6 +466,7 @@ class SongsCompanion extends UpdateCompanion<Song> {
   final Value<int> file_size;
   final Value<int> added_at;
   final Value<int?> last_played;
+  final Value<String?> custom_art_path;
   final Value<int> rowid;
   const SongsCompanion({
     this.id = const Value.absent(),
@@ -432,6 +478,7 @@ class SongsCompanion extends UpdateCompanion<Song> {
     this.file_size = const Value.absent(),
     this.added_at = const Value.absent(),
     this.last_played = const Value.absent(),
+    this.custom_art_path = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   SongsCompanion.insert({
@@ -444,6 +491,7 @@ class SongsCompanion extends UpdateCompanion<Song> {
     this.file_size = const Value.absent(),
     required int added_at,
     this.last_played = const Value.absent(),
+    this.custom_art_path = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : id = Value(id),
        title = Value(title),
@@ -460,6 +508,7 @@ class SongsCompanion extends UpdateCompanion<Song> {
     Expression<int>? file_size,
     Expression<int>? added_at,
     Expression<int>? last_played,
+    Expression<String>? custom_art_path,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -472,6 +521,7 @@ class SongsCompanion extends UpdateCompanion<Song> {
       if (file_size != null) 'file_size': file_size,
       if (added_at != null) 'added_at': added_at,
       if (last_played != null) 'last_played': last_played,
+      if (custom_art_path != null) 'custom_art_path': custom_art_path,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -486,6 +536,7 @@ class SongsCompanion extends UpdateCompanion<Song> {
     Value<int>? file_size,
     Value<int>? added_at,
     Value<int?>? last_played,
+    Value<String?>? custom_art_path,
     Value<int>? rowid,
   }) {
     return SongsCompanion(
@@ -498,6 +549,7 @@ class SongsCompanion extends UpdateCompanion<Song> {
       file_size: file_size ?? this.file_size,
       added_at: added_at ?? this.added_at,
       last_played: last_played ?? this.last_played,
+      custom_art_path: custom_art_path ?? this.custom_art_path,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -532,6 +584,9 @@ class SongsCompanion extends UpdateCompanion<Song> {
     if (last_played.present) {
       map['last_played'] = Variable<int>(last_played.value);
     }
+    if (custom_art_path.present) {
+      map['custom_art_path'] = Variable<String>(custom_art_path.value);
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -550,6 +605,7 @@ class SongsCompanion extends UpdateCompanion<Song> {
           ..write('file_size: $file_size, ')
           ..write('added_at: $added_at, ')
           ..write('last_played: $last_played, ')
+          ..write('custom_art_path: $custom_art_path, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -1255,6 +1311,7 @@ typedef $$SongsTableCreateCompanionBuilder =
       Value<int> file_size,
       required int added_at,
       Value<int?> last_played,
+      Value<String?> custom_art_path,
       Value<int> rowid,
     });
 typedef $$SongsTableUpdateCompanionBuilder =
@@ -1268,6 +1325,7 @@ typedef $$SongsTableUpdateCompanionBuilder =
       Value<int> file_size,
       Value<int> added_at,
       Value<int?> last_played,
+      Value<String?> custom_art_path,
       Value<int> rowid,
     });
 
@@ -1345,6 +1403,11 @@ class $$SongsTableFilterComposer extends Composer<_$AppDatabase, $SongsTable> {
 
   ColumnFilters<int> get last_played => $composableBuilder(
     column: $table.last_played,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get custom_art_path => $composableBuilder(
+    column: $table.custom_art_path,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -1427,6 +1490,11 @@ class $$SongsTableOrderingComposer
     column: $table.last_played,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<String> get custom_art_path => $composableBuilder(
+    column: $table.custom_art_path,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$SongsTableAnnotationComposer
@@ -1464,6 +1532,11 @@ class $$SongsTableAnnotationComposer
 
   GeneratedColumn<int> get last_played => $composableBuilder(
     column: $table.last_played,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get custom_art_path => $composableBuilder(
+    column: $table.custom_art_path,
     builder: (column) => column,
   );
 
@@ -1530,6 +1603,7 @@ class $$SongsTableTableManager
                 Value<int> file_size = const Value.absent(),
                 Value<int> added_at = const Value.absent(),
                 Value<int?> last_played = const Value.absent(),
+                Value<String?> custom_art_path = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => SongsCompanion(
                 id: id,
@@ -1541,6 +1615,7 @@ class $$SongsTableTableManager
                 file_size: file_size,
                 added_at: added_at,
                 last_played: last_played,
+                custom_art_path: custom_art_path,
                 rowid: rowid,
               ),
           createCompanionCallback:
@@ -1554,6 +1629,7 @@ class $$SongsTableTableManager
                 Value<int> file_size = const Value.absent(),
                 required int added_at,
                 Value<int?> last_played = const Value.absent(),
+                Value<String?> custom_art_path = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => SongsCompanion.insert(
                 id: id,
@@ -1565,6 +1641,7 @@ class $$SongsTableTableManager
                 file_size: file_size,
                 added_at: added_at,
                 last_played: last_played,
+                custom_art_path: custom_art_path,
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0

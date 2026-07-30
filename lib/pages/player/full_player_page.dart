@@ -1,11 +1,16 @@
+import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:audio_metadata_reader/audio_metadata_reader.dart';
 import 'package:hugeicons/hugeicons.dart';
 import 'package:provider/provider.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_typography.dart';
 import '../../core/theme/glass_card.dart';
 import '../../providers/audio_provider.dart';
+import '../../data/database/app_database.dart';
 import '../../data/models/queue_state.dart' as queue;
+import '../../services/custom_art_service.dart';
 import '../../widgets/retro_seek_bar.dart';
 import '../../widgets/assign_tag_sheet.dart';
 
@@ -66,7 +71,7 @@ class FullPlayerPage extends StatelessWidget {
                         children: [
                           const SizedBox(height: 8),
                           // Art card
-                          _buildArtCard(audioProvider, colors, song.title),
+                          _buildArtCard(audioProvider, colors, song),
                           const SizedBox(height: 28),
                           // Song info
                           _buildSongInfo(song.title, song.artist, song.album),
@@ -78,7 +83,7 @@ class FullPlayerPage extends StatelessWidget {
                           _buildControls(audioProvider),
                           const SizedBox(height: 20),
                           // Extra actions
-                          _buildExtraActions(context, song.id, song.title),
+                          _buildExtraActions(context, song),
                           const SizedBox(height: 16),
                         ],
                       ),
@@ -125,49 +130,11 @@ class FullPlayerPage extends StatelessWidget {
     );
   }
 
-  Widget _buildArtCard(AudioProvider audioProvider, List<Color> colors, String title) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 36),
-      child: AspectRatio(
-        aspectRatio: 1,
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 400),
-          curve: Curves.easeOut,
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              colors: colors,
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
-            borderRadius: BorderRadius.circular(24),
-            boxShadow: [
-              BoxShadow(
-                color: colors[0].withValues(alpha: 0.4),
-                blurRadius: 40,
-                offset: const Offset(0, 20),
-                spreadRadius: -8,
-              ),
-            ],
-          ),
-          child: Center(
-            child: audioProvider.isPlaying
-                ? Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      _SpinningVinylIcon(isPlaying: true),
-                    ],
-                  )
-                : Text(
-                    title.isNotEmpty ? title[0].toUpperCase() : '♪',
-                    style: TextStyle(
-                      color: Colors.white.withValues(alpha: 0.9),
-                      fontSize: 96,
-                      fontWeight: FontWeight.w900,
-                    ),
-                  ),
-          ),
-        ),
-      ),
+  Widget _buildArtCard(AudioProvider audioProvider, List<Color> colors, dynamic song) {
+    return _SongArtCard(
+      audioProvider: audioProvider,
+      colors: colors,
+      song: song,
     );
   }
 
@@ -211,10 +178,15 @@ class FullPlayerPage extends StatelessWidget {
   }
 
   Widget _buildSeekBar(AudioProvider audioProvider) {
-    return RetroSeekBar(
-      position: audioProvider.position,
-      duration: audioProvider.duration,
-      onChangeEnd: (position) => audioProvider.seek(position),
+    return ValueListenableBuilder<Duration>(
+      valueListenable: audioProvider.positionNotifier,
+      builder: (context, position, _) {
+        return RetroSeekBar(
+          position: position,
+          duration: audioProvider.duration,
+          onChangeEnd: (newPosition) => audioProvider.seek(newPosition),
+        );
+      },
     );
   }
 
@@ -272,7 +244,7 @@ class FullPlayerPage extends StatelessWidget {
     }
   }
 
-  Widget _buildExtraActions(BuildContext context, String songId, String songTitle) {
+  Widget _buildExtraActions(BuildContext context, dynamic song) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 36),
       child: Row(
@@ -281,7 +253,12 @@ class FullPlayerPage extends StatelessWidget {
           _TextAction(
             icon: HugeIcons.strokeRoundedTag01,
             label: 'Tag',
-            onTap: () => AssignTagSheet.show(context, songId, songTitle),
+            onTap: () => AssignTagSheet.show(context, song.id as String, song.title as String),
+          ),
+          _TextAction(
+            icon: HugeIcons.strokeRoundedImage01,
+            label: 'Art',
+            onTap: () => _setCustomArt(context, song),
           ),
           _TextAction(
             icon: HugeIcons.strokeRoundedPlaylist01,
@@ -291,6 +268,22 @@ class FullPlayerPage extends StatelessWidget {
         ],
       ),
     );
+  }
+
+  Future<void> _setCustomArt(BuildContext context, dynamic song) async {
+    final db = context.read<AppDatabase>();
+    final service = CustomArtService(db);
+    final path = await service.pickAndSetArt(song.id as String);
+    if (path != null && context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Thumbnail set for ${song.title}'),
+          backgroundColor: AppColors.primary,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        ),
+      );
+    }
   }
 
   void _showQueueSheet(BuildContext context) {
@@ -500,53 +493,134 @@ class _GlowBlob extends StatelessWidget {
   }
 }
 
-// ── Spinning Vinyl Icon (compact) ─────────────────────────────────────────────
+// ── Static Vinyl Icon (compact) ─────────────────────────────────────────────
 
-class _SpinningVinylIcon extends StatefulWidget {
-  final bool isPlaying;
-  const _SpinningVinylIcon({required this.isPlaying});
+class _StaticVinylIcon extends StatelessWidget {
+  const _StaticVinylIcon();
 
   @override
-  State<_SpinningVinylIcon> createState() => _SpinningVinylIconState();
+  Widget build(BuildContext context) {
+    return HugeIcon(
+      icon: HugeIcons.strokeRoundedMusicNote02,
+      size: 100,
+      color: Colors.white.withValues(alpha: 0.35),
+    );
+  }
 }
 
-class _SpinningVinylIconState extends State<_SpinningVinylIcon>
-    with SingleTickerProviderStateMixin {
-  late AnimationController _ctrl;
+// ── Song Art Card ─────────────────────────────────────────────────────────────
+
+class _SongArtCard extends StatefulWidget {
+  final AudioProvider audioProvider;
+  final List<Color> colors;
+  final dynamic song;
+
+  const _SongArtCard({
+    required this.audioProvider,
+    required this.colors,
+    required this.song,
+  });
+
+  @override
+  State<_SongArtCard> createState() => _SongArtCardState();
+}
+
+class _SongArtCardState extends State<_SongArtCard> {
+  Future<Uint8List?>? _imageFuture;
 
   @override
   void initState() {
     super.initState();
-    _ctrl = AnimationController(
-      vsync: this,
-      duration: const Duration(seconds: 8),
-    );
-    if (widget.isPlaying) _ctrl.repeat();
+    _loadImage();
   }
 
   @override
-  void didUpdateWidget(_SpinningVinylIcon old) {
-    super.didUpdateWidget(old);
-    if (widget.isPlaying && !_ctrl.isAnimating) {
-      _ctrl.repeat();
-    } else if (!widget.isPlaying && _ctrl.isAnimating) {
-      _ctrl.stop();
+  void didUpdateWidget(covariant _SongArtCard oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.song.id != widget.song.id ||
+        oldWidget.song.custom_art_path != widget.song.custom_art_path) {
+      _loadImage();
     }
   }
 
-  @override
-  void dispose() {
-    _ctrl.dispose();
-    super.dispose();
+  void _loadImage() {
+    final customArt = widget.song.custom_art_path as String?;
+    if (customArt != null) {
+      _imageFuture = Future.value(File(customArt).readAsBytesSync());
+      return;
+    }
+    final filePath = widget.song.file_path;
+    _imageFuture = compute((path) {
+      try {
+        final metadata = readMetadata(File(path), getImage: true);
+        final pictures = metadata.pictures;
+        if (pictures != null && pictures.isNotEmpty) {
+          return pictures.first.bytes;
+        }
+      } catch (_) {}
+      return null;
+    }, filePath as String);
   }
 
   @override
   Widget build(BuildContext context) {
-    return RotationTransition(
-      turns: _ctrl,
-      child: HugeIcon(icon: HugeIcons.strokeRoundedMusicNote02,
-        size: 100,
-        color: Colors.white.withValues(alpha: 0.35),
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 36),
+      child: AspectRatio(
+        aspectRatio: 1,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 400),
+          curve: Curves.easeOut,
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: widget.colors,
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+            borderRadius: BorderRadius.circular(24),
+            boxShadow: [
+              BoxShadow(
+                color: widget.colors[0].withValues(alpha: 0.4),
+                blurRadius: 40,
+                offset: const Offset(0, 20),
+                spreadRadius: -8,
+              ),
+            ],
+          ),
+          child: FutureBuilder<Uint8List?>(
+            future: _imageFuture,
+            builder: (context, snapshot) {
+              if (snapshot.hasData && snapshot.data != null) {
+                return ClipRRect(
+                  borderRadius: BorderRadius.circular(24),
+                  child: Image.memory(
+                    snapshot.data!,
+                    fit: BoxFit.cover,
+                  ),
+                );
+              }
+
+              // Fallback if no image or still loading
+              return Center(
+                child: widget.audioProvider.isPlaying
+                    ? const Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          _StaticVinylIcon(),
+                        ],
+                      )
+                    : Text(
+                        widget.song.title.isNotEmpty ? widget.song.title[0].toUpperCase() : '♪',
+                        style: TextStyle(
+                          color: Colors.white.withValues(alpha: 0.9),
+                          fontSize: 96,
+                          fontWeight: FontWeight.w900,
+                        ),
+                      ),
+              );
+            },
+          ),
+        ),
       ),
     );
   }

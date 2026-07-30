@@ -1,4 +1,8 @@
+import 'dart:io';
 import 'dart:ui';
+import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
+import 'package:audio_metadata_reader/audio_metadata_reader.dart';
 import 'package:flutter/material.dart';
 import 'package:hugeicons/hugeicons.dart';
 import 'package:provider/provider.dart';
@@ -53,12 +57,6 @@ class _MiniPlayerContent extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final progress = audioProvider.duration.inMilliseconds > 0
-        ? (audioProvider.position.inMilliseconds /
-                audioProvider.duration.inMilliseconds)
-            .clamp(0.0, 1.0)
-        : 0.0;
-
     final colors = AppColors.seedGradient(song.title as String);
 
     return Dismissible(
@@ -88,14 +86,24 @@ class _MiniPlayerContent extends StatelessWidget {
                   Stack(
                     children: [
                       Container(height: 2, color: AppColors.surfaceBorder),
-                      FractionallySizedBox(
-                        widthFactor: progress,
-                        child: Container(
-                          height: 2,
-                          decoration: BoxDecoration(
-                            gradient: LinearGradient(colors: colors),
-                          ),
-                        ),
+                      ValueListenableBuilder<Duration>(
+                        valueListenable: audioProvider.positionNotifier,
+                        builder: (context, position, _) {
+                          final progress = audioProvider.duration.inMilliseconds > 0
+                              ? (position.inMilliseconds /
+                                      audioProvider.duration.inMilliseconds)
+                                  .clamp(0.0, 1.0)
+                              : 0.0;
+                          return FractionallySizedBox(
+                            widthFactor: progress,
+                            child: Container(
+                              height: 2,
+                              decoration: BoxDecoration(
+                                gradient: LinearGradient(colors: colors),
+                              ),
+                            ),
+                          );
+                        },
                       ),
                     ],
                   ),
@@ -103,37 +111,11 @@ class _MiniPlayerContent extends StatelessWidget {
                     padding: const EdgeInsets.fromLTRB(14, 10, 10, 12),
                     child: Row(
                       children: [
-                        // Album art placeholder
-                        Container(
-                          width: 44,
-                          height: 44,
-                          decoration: BoxDecoration(
-                            gradient: LinearGradient(
-                              colors: colors,
-                              begin: Alignment.topLeft,
-                              end: Alignment.bottomRight,
-                            ),
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          child: Center(
-                            child: audioProvider.isPlaying
-                                ? AnimatedBars(
-                                    isPlaying: true,
-                                    width: 18,
-                                    height: 18,
-                                    color: Colors.white.withValues(alpha: 0.9),
-                                  )
-                                : Text(
-                                    (song.title as String).isNotEmpty
-                                        ? (song.title as String)[0].toUpperCase()
-                                        : '♪',
-                                    style: AppTypography.heading.copyWith(
-                                      color: Colors.white.withValues(alpha: 0.9),
-                                      fontSize: 18,
-                                      fontWeight: FontWeight.w800,
-                                    ),
-                                  ),
-                          ),
+                        // Album art
+                        _MiniPlayerArt(
+                          song: song,
+                          colors: colors,
+                          audioProvider: audioProvider,
                         ),
                         const SizedBox(width: 12),
                         // Song info
@@ -256,6 +238,113 @@ class _PlayPauseBtn extends StatelessWidget {
             color: Colors.white,
           ),
         ),
+      ),
+    );
+  }
+}
+
+// ── Mini Player Art ──────────────────────────────────────────────────────────
+
+class _MiniPlayerArt extends StatefulWidget {
+  final dynamic song;
+  final List<Color> colors;
+  final AudioProvider audioProvider;
+
+  const _MiniPlayerArt({
+    required this.song,
+    required this.colors,
+    required this.audioProvider,
+  });
+
+  @override
+  State<_MiniPlayerArt> createState() => _MiniPlayerArtState();
+}
+
+class _MiniPlayerArtState extends State<_MiniPlayerArt> {
+  Future<Uint8List?>? _imageFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadImage();
+  }
+
+  @override
+  void didUpdateWidget(covariant _MiniPlayerArt oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.song.id != widget.song.id ||
+        oldWidget.song.custom_art_path != widget.song.custom_art_path) {
+      _loadImage();
+    }
+  }
+
+  void _loadImage() {
+    final customArt = widget.song.custom_art_path as String?;
+    if (customArt != null) {
+      _imageFuture = Future.value(File(customArt).readAsBytesSync());
+      return;
+    }
+    final filePath = widget.song.file_path;
+    _imageFuture = compute((path) {
+      try {
+        final metadata = readMetadata(File(path), getImage: true);
+        final pictures = metadata.pictures;
+        if (pictures != null && pictures.isNotEmpty) {
+          return pictures.first.bytes;
+        }
+      } catch (_) {}
+      return null;
+    }, filePath as String);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 44,
+      height: 44,
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: widget.colors,
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: FutureBuilder<Uint8List?>(
+        future: _imageFuture,
+        builder: (context, snapshot) {
+          if (snapshot.hasData && snapshot.data != null) {
+            return ClipRRect(
+              borderRadius: BorderRadius.circular(10),
+              child: Image.memory(
+                snapshot.data!,
+                fit: BoxFit.cover,
+                cacheWidth: 150,
+              ),
+            );
+          }
+
+          // Fallback if no image or still loading
+          return Center(
+            child: widget.audioProvider.isPlaying
+                ? AnimatedBars(
+                    isPlaying: true,
+                    width: 18,
+                    height: 18,
+                    color: Colors.white.withValues(alpha: 0.9),
+                  )
+                : Text(
+                    (widget.song.title as String).isNotEmpty
+                        ? (widget.song.title as String)[0].toUpperCase()
+                        : '♪',
+                    style: AppTypography.heading.copyWith(
+                      color: Colors.white.withValues(alpha: 0.9),
+                      fontSize: 18,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+          );
+        },
       ),
     );
   }

@@ -8,7 +8,7 @@ After reviewing all pages, widgets, providers, services, and manifests, here are
 
 ## 🔴 Critical Issues (Broken / Crashes)
 
-### 1. `TagDetailPage` — Crash if tag is deleted while open
+### 1. `TagDetailPage` — Crash if tag is deleted while open (✅ FIXED)
 
 ```dart
 // tag_detail_page.dart L47
@@ -17,7 +17,7 @@ final tag = tagProvider.tags.firstWhere((t) => t.id == widget.tagId);
 
 This will throw `StateError` if the tag is deleted while the user is on the page (no `orElse` guard).
 
-### 2. `SettingsPage` — "Clear All Data" is unimplemented
+### 2. `SettingsPage` — "Clear All Data" is unimplemented (✅ FIXED)
 
 ```dart
 // settings_page.dart L147
@@ -27,7 +27,7 @@ Navigator.pop(context);
 
 Pressing "Clear" shows a snackbar but does **nothing** — data is not cleared.
 
-### 3. `FullPlayerPage` — "Queue" button is unimplemented
+### 3. `FullPlayerPage` — "Queue" button is unimplemented (✅ FIXED)
 
 ```dart
 // full_player_page.dart L210–212
@@ -38,14 +38,14 @@ onPressed: () {
 
 The Queue button in the full player does nothing.
 
-### 4. `AudioProvider` uses a raw `AudioPlayer` — NOT the `AudioPlayerService`
+### 4. `AudioProvider` uses a raw `AudioPlayer` — NOT the `AudioPlayerService` (✅ FIXED)
 
 `AudioProvider` (`audio_provider.dart L8`) creates its own `AudioPlayer` directly and never uses `AudioPlayerService`. This means:
 
 - Audio session configuration (duck on interruption, pause on noise) is **completely bypassed**
 - The `AudioPlayerService` class is dead code (never instantiated anywhere)
 
-### 5. `SongImportService` — no `READ_MEDIA_AUDIO` / `READ_EXTERNAL_STORAGE` permission in `AndroidManifest.xml`
+### 5. `SongImportService` — no `READ_MEDIA_AUDIO` / `READ_EXTERNAL_STORAGE` permission in `AndroidManifest.xml` (✅ FIXED)
 
 The manifest has `WAKE_LOCK`, `FOREGROUND_SERVICE`, and `FOREGROUND_SERVICE_MEDIA_PLAYBACK`, but is **missing**:
 
@@ -59,7 +59,7 @@ The manifest has `WAKE_LOCK`, `FOREGROUND_SERVICE`, and `FOREGROUND_SERVICE_MEDI
 
 Without these, even after the runtime permission dialog, Android may reject file reads silently.
 
-### 6. Missing `POST_NOTIFICATIONS` permission in `AndroidManifest.xml`
+### 6. Missing `POST_NOTIFICATIONS` permission in `AndroidManifest.xml` (✅ FIXED)
 
 Runtime permission is requested via `PermissionService.requestNotificationPermission()`, but `android.permission.POST_NOTIFICATIONS` is not declared in the manifest. On Android 13+ this **must** be declared or the runtime request is ignored.
 
@@ -103,11 +103,11 @@ The mini player only shows play/pause and next. The previous track control is on
 
 Users cannot dismiss the mini player once a song is loaded without going into the full player and stopping playback manually.
 
-### 15. Song tile — no way to see song duration in the list
+### 15. Song tile — no way to see song duration in the list (✅ FIXED)
 
 `SongTile` doesn't show the duration. The data is available (`song.duration`) but unused in the tile.
 
-### 16. `SettingsPage` — "Scan Directories" tile does nothing
+### 16. `SettingsPage` — "Scan Directories" tile does nothing (✅ FIXED)
 
 ```dart
 onTap: () {
@@ -166,3 +166,13 @@ This is minor, but tapping the title to expand it would be a nice-to-have.
 6. **Add a close button** to `FullPlayerPage`
 7. **Use `scannedCount`** in scan snackbar message
 8. **Add shuffle-all button** to VibePage
+
+Terminal:
+
+D/PipelineWatcher(19033): [0xb4000075437722c0] pipelineFull: too many frames in pipeline (4)
+D/PipelineWatcher(19033): [0xb4000075437722c0] pipelineFull: too many frames in pipeline (4)
+D/PipelineWatcher(19033): [0xb4000075437722c0] pipelineFull: too many frames in pipeline (4)
+D/PipelineWatcher(19033): [0xb4000075437722c0] pipelineFull: too many frames in pipeline (4)
+D/BufferPoolAccessor2.0(19033): bufferpool2 0xb400007543739428 : 5(40960 size) total buffers - 1(8192 size) used buffers - 667/672 (recycle/alloc) - 5/1340 (fetch/transfer)
+D/PipelineWatcher(19033): [0xb4000075437722c0] pipelineFull: too many frames in pipeline (4)
+D/PipelineWatcher(19033): [0xb4000075437722c0] pipelineFull: too many frames in pipeline (4)
