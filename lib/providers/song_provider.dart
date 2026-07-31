@@ -1,4 +1,6 @@
+import 'dart:io';
 import 'package:flutter/foundation.dart';
+import 'package:path/path.dart' as p;
 import '../data/database/app_database.dart';
 import '../services/directory_settings_service.dart';
 import '../services/song_import_service.dart';
@@ -106,4 +108,36 @@ class SongProvider extends ChangeNotifier {
 
   Future<int> getLibrarySize() =>
       _importService.getLibrarySize();
+
+  Future<bool> renameSong(Song song, String newTitle) async {
+    try {
+      final file = File(song.file_path);
+      if (!await file.exists()) return false;
+
+      final dir = p.dirname(song.file_path);
+      final ext = p.extension(song.file_path);
+      final newFilePath = p.join(dir, '$newTitle$ext');
+
+      // Rename on file system
+      await file.rename(newFilePath);
+
+      // Update in database
+      await _db.songDao.updateSongMetadata(song.id, newTitle, newFilePath);
+
+      // Update in memory
+      final index = _songs.indexWhere((s) => s.id == song.id);
+      if (index != -1) {
+        _songs[index] = _songs[index].copyWith(
+          title: newTitle,
+          file_path: newFilePath,
+        );
+        notifyListeners();
+      }
+      return true;
+    } catch (e) {
+      _error = e.toString();
+      notifyListeners();
+      return false;
+    }
+  }
 }

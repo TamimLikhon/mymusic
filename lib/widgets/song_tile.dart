@@ -45,26 +45,30 @@ class _SongTileState extends State<SongTile>
       },
       onTapCancel: () => setState(() => _isPressed = false),
       onLongPress: widget.onLongPress,
-      child: AnimatedContainer(
+      child: AnimatedScale(
+        scale: _isPressed ? 0.97 : 1.0,
         duration: const Duration(milliseconds: 150),
-        margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-        decoration: BoxDecoration(
-          color: _isPressed
-              ? AppColors.surface
-              : isPlaying
-              ? AppColors.primaryFaint
-              : Colors.transparent,
-          borderRadius: BorderRadius.circular(14),
-          border: isPlaying
-              ? Border.all(
-                  color: AppColors.primary.withValues(alpha: 0.3),
-                  width: 1,
-                )
-              : null,
-        ),
-        child: Row(
-          children: [
+        curve: Curves.easeInOut,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 150),
+          margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          decoration: BoxDecoration(
+            color: _isPressed
+                ? AppColors.surface
+                : isPlaying
+                ? AppColors.primaryFaint
+                : Colors.transparent,
+            borderRadius: BorderRadius.circular(14),
+            border: isPlaying
+                ? Border.all(
+                    color: AppColors.primary.withValues(alpha: 0.3),
+                    width: 1,
+                  )
+                : null,
+          ),
+          child: Row(
+            children: [
             // Index or playing dot
             if (widget.index != null)
               SizedBox(
@@ -133,6 +137,7 @@ class _SongTileState extends State<SongTile>
             ),
           ],
         ),
+      ),
       ),
     );
   }

@@ -4,6 +4,7 @@ import 'package:just_audio_background/just_audio_background.dart';
 import '../data/database/app_database.dart';
 import '../data/models/queue_state.dart';
 import '../services/audio_player_service.dart';
+import '../core/utils/art_extractor.dart';
 
 class AudioProvider extends ChangeNotifier {
   final AudioPlayerService _service = AudioPlayerService();
@@ -91,6 +92,9 @@ class AudioProvider extends ChangeNotifier {
       final song = _queueState.currentSong;
       if (song != null) {
         _db.songDao.updateLastPlayed(song.id);
+        if (song.custom_art_path == null) {
+          ArtExtractor.extractAndCacheArt(song.file_path, song.id);
+        }
       }
 
       notifyListeners();
@@ -129,7 +133,12 @@ class AudioProvider extends ChangeNotifier {
       currentIndex: startIndex,
     );
 
-    await _service.setQueue(songs, initialIndex: startIndex);
+    final cacheDir = await ArtExtractor.getCacheDir();
+    final initialSong = songs[startIndex];
+    if (initialSong.custom_art_path == null) {
+      await ArtExtractor.extractAndCacheArt(initialSong.file_path, initialSong.id);
+    }
+    await _service.setQueue(songs, cacheDir, initialIndex: startIndex);
     await _service.play();
   }
 
@@ -148,7 +157,12 @@ class AudioProvider extends ChangeNotifier {
       currentIndex: startIndex,
     );
 
-    await _service.setQueue(songs, initialIndex: startIndex);
+    final cacheDir = await ArtExtractor.getCacheDir();
+    final initialSong = songs[startIndex];
+    if (initialSong.custom_art_path == null) {
+      await ArtExtractor.extractAndCacheArt(initialSong.file_path, initialSong.id);
+    }
+    await _service.setQueue(songs, cacheDir, initialIndex: startIndex);
     await _service.play();
   }
 
@@ -162,7 +176,12 @@ class AudioProvider extends ChangeNotifier {
       currentIndex: 0,
     );
 
-    await _service.setQueue(songs, initialIndex: 0);
+    final cacheDir = await ArtExtractor.getCacheDir();
+    final initialSong = songs[0];
+    if (initialSong.custom_art_path == null) {
+      await ArtExtractor.extractAndCacheArt(initialSong.file_path, initialSong.id);
+    }
+    await _service.setQueue(songs, cacheDir, initialIndex: 0);
     await _service.setShuffleModeEnabled(true);
     await _service.play();
   }
@@ -178,7 +197,12 @@ class AudioProvider extends ChangeNotifier {
       currentIndex: 0,
     );
 
-    await _service.setQueue(songs, initialIndex: 0);
+    final cacheDir = await ArtExtractor.getCacheDir();
+    final initialSong = songs[0];
+    if (initialSong.custom_art_path == null) {
+      await ArtExtractor.extractAndCacheArt(initialSong.file_path, initialSong.id);
+    }
+    await _service.setQueue(songs, cacheDir, initialIndex: 0);
     await _service.setShuffleModeEnabled(true);
     await _service.play();
   }

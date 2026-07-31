@@ -1,3 +1,4 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:hugeicons/hugeicons.dart';
 import 'package:provider/provider.dart';
@@ -415,7 +416,7 @@ class _VibePageState extends State<VibePage> {
                     startIndex: index,
                   );
                 },
-                onLongPress: () => _showSongOptions(song.id, song.title),
+                onLongPress: () => _showSongOptions(song),
               );
             },
             childCount: songProvider.songs.length,
@@ -427,71 +428,151 @@ class _VibePageState extends State<VibePage> {
     );
   }
 
-  void _showSongOptions(String songId, String songTitle) {
+  void _showSongOptions(Song song) {
     showModalBottomSheet(
       context: context,
-      backgroundColor: AppColors.surfaceHigh,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
-      ),
+      backgroundColor: Colors.transparent,
+      elevation: 0,
+      isScrollControlled: true,
       builder: (context) {
-        return SafeArea(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                width: 40,
-                height: 4,
-                margin: const EdgeInsets.only(top: 12, bottom: 16),
-                decoration: BoxDecoration(
-                  color: AppColors.surfaceBorder,
-                  borderRadius: BorderRadius.circular(2),
+        return ClipRRect(
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+            child: Container(
+              color: AppColors.surfaceHigh.withValues(alpha: 0.7),
+              child: SafeArea(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      width: 40,
+                      height: 4,
+                      margin: const EdgeInsets.only(top: 12, bottom: 16),
+                      decoration: BoxDecoration(
+                        color: AppColors.surfaceBorder,
+                        borderRadius: BorderRadius.circular(2),
+                      ),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 20),
+                      child: Text(
+                        song.title,
+                        style: AppTypography.heading,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    ListTile(
+                      leading: Container(
+                        width: 40,
+                        height: 40,
+                        decoration: GlassCard.card(radius: 12),
+                        child: const Icon(Icons.edit, color: AppColors.primary, size: 20),
+                      ),
+                      title: Text('Edit Name', style: AppTypography.body),
+                      onTap: () {
+                        Navigator.pop(context);
+                        _showRenameDialog(song);
+                      },
+                    ),
+                    ListTile(
+                      leading: Container(
+                        width: 40,
+                        height: 40,
+                        decoration: GlassCard.card(radius: 12),
+                        child: const HugeIcon(icon: HugeIcons.strokeRoundedTag01, color: AppColors.primary, size: 20),
+                      ),
+                      title: Text('Assign to tag', style: AppTypography.body),
+                      onTap: () {
+                        Navigator.pop(context);
+                        AssignTagSheet.show(context, song.id, song.title);
+                      },
+                    ),
+                    ListTile(
+                      leading: Container(
+                        width: 40,
+                        height: 40,
+                        decoration: GlassCard.card(radius: 12),
+                        child: const HugeIcon(icon: HugeIcons.strokeRoundedDelete01, color: AppColors.secondary, size: 20),
+                      ),
+                      title: Text(
+                        'Remove from library',
+                        style: AppTypography.body.copyWith(color: AppColors.secondary),
+                      ),
+                      onTap: () {
+                        Navigator.pop(context);
+                        _confirmDelete(song.id, song.title);
+                      },
+                    ),
+                    const SizedBox(height: 16),
+                  ],
                 ),
               ),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
-                child: Text(
-                  songTitle,
-                  style: AppTypography.heading,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-              const SizedBox(height: 16),
-              ListTile(
-                leading: Container(
-                  width: 40,
-                  height: 40,
-                  decoration: GlassCard.card(radius: 12),
-                  child: const HugeIcon(icon: HugeIcons.strokeRoundedTag01, color: AppColors.primary, size: 20),
-                ),
-                title: Text('Assign to tag', style: AppTypography.body),
-                onTap: () {
-                  Navigator.pop(context);
-                  AssignTagSheet.show(context, songId, songTitle);
-                },
-              ),
-              ListTile(
-                leading: Container(
-                  width: 40,
-                  height: 40,
-                  decoration: GlassCard.card(radius: 12),
-                  child: const HugeIcon(icon: HugeIcons.strokeRoundedDelete01, color: AppColors.secondary, size: 20),
-                ),
-                title: Text(
-                  'Remove from library',
-                  style: AppTypography.body.copyWith(color: AppColors.secondary),
-                ),
-                onTap: () {
-                  Navigator.pop(context);
-                  _confirmDelete(songId, songTitle);
-                },
-              ),
-              const SizedBox(height: 16),
-            ],
+            ),
           ),
         );
       },
+    );
+  }
+
+  void _showRenameDialog(Song song) {
+    final controller = TextEditingController(text: song.title);
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: AppColors.surfaceHigh,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: Text('Edit Song Name', style: AppTypography.heading),
+        content: TextField(
+          controller: controller,
+          style: AppTypography.body,
+          decoration: InputDecoration(
+            hintText: 'New song name',
+            hintStyle: AppTypography.body.copyWith(color: AppColors.textSecondary),
+            filled: true,
+            fillColor: AppColors.surface,
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide.none,
+            ),
+          ),
+          autofocus: true,
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text('Cancel',
+                style: AppTypography.body.copyWith(color: AppColors.textSecondary)),
+          ),
+          TextButton(
+            onPressed: () async {
+              final newTitle = controller.text.trim();
+              if (newTitle.isNotEmpty && newTitle != song.title) {
+                final nav = Navigator.of(context);
+                final scaffoldMsg = ScaffoldMessenger.of(context);
+                final success = await context.read<SongProvider>().renameSong(song, newTitle);
+                
+                nav.pop();
+                if (success) {
+                  scaffoldMsg.showSnackBar(
+                    const SnackBar(content: Text('Song renamed successfully')),
+                  );
+                } else {
+                  scaffoldMsg.showSnackBar(
+                    const SnackBar(content: Text('Failed to rename song')),
+                  );
+                }
+              } else {
+                Navigator.pop(context);
+              }
+            },
+            child: Text('Save',
+                style: AppTypography.body.copyWith(color: AppColors.primary)),
+          ),
+        ],
+      ),
     );
   }
 

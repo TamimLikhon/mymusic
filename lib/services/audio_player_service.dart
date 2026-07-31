@@ -51,7 +51,7 @@ class AudioPlayerService {
     _isInitialized = true;
   }
 
-  Future<void> setQueue(List<Song> songs, {int initialIndex = 0}) async {
+  Future<void> setQueue(List<Song> songs, String cacheDirPath, {int initialIndex = 0}) async {
     if (!_isInitialized) await initialize();
 
     // ignore: deprecated_member_use
@@ -65,6 +65,9 @@ class AudioPlayerService {
                 title: song.title,
                 artist: song.artist,
                 album: song.album,
+                artUri: song.custom_art_path != null
+                    ? Uri.file(song.custom_art_path!)
+                    : Uri.file('$cacheDirPath/${song.id}.jpg'),
               ),
             ),
           )
