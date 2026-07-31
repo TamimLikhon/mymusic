@@ -15,8 +15,8 @@ import '../../widgets/tag_chip.dart';
 import '../../widgets/assign_tag_sheet.dart';
 
 class VibePage extends StatefulWidget {
-  final VoidCallback? onMoreTap;
-  const VibePage({super.key, this.onMoreTap});
+  final VoidCallback? onSettingsTap;
+  const VibePage({super.key, this.onSettingsTap});
 
   @override
   State<VibePage> createState() => _VibePageState();
@@ -47,15 +47,17 @@ class _VibePageState extends State<VibePage> {
         final count = provider.scannedCount;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(count > 0 ? 'Found $count new songs 🎵' : 'No new songs found'),
+            content: Text(
+              count > 0 ? 'Found $count new songs 🎵' : 'No new songs found',
+            ),
           ),
         );
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Error: $e')));
       }
     }
 
@@ -95,69 +97,109 @@ class _VibePageState extends State<VibePage> {
   }
 
   Widget _buildEmptyState() {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 40),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Container(
-              width: 120,
-              height: 120,
-              decoration: BoxDecoration(
-                gradient: const LinearGradient(
-                  colors: [AppColors.primary, AppColors.accent],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-                borderRadius: BorderRadius.circular(32),
-              ),
-              child: const HugeIcon(icon: HugeIcons.strokeRoundedFolderMusic,
-                size: 56,
-                color: Colors.white,
-              ),
-            ),
-            const SizedBox(height: 32),
-            Text(
-              'Your library is empty',
-              style: AppTypography.hero.copyWith(fontSize: 22),
-            ),
-            const SizedBox(height: 12),
-            Text(
-              'Scan your device to find audio files and start listening.',
-              style: AppTypography.caption.copyWith(height: 1.5),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 36),
-            GestureDetector(
-              onTap: _scanSongs,
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
-                decoration: GlassCard.accent(radius: 30, accentColor: AppColors.primary),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const HugeIcon(icon: HugeIcons.strokeRoundedSearch01, color: Colors.white, size: 20),
-                    const SizedBox(width: 10),
-                    Text(
-                      'Scan Device',
-                      style: AppTypography.bodyMedium.copyWith(
-                        color: Colors.white,
-                        fontWeight: FontWeight.w700,
-                      ),
+    return Stack(
+      children: [
+        Center(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 40),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Container(
+                  width: 120,
+                  height: 120,
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(
+                      colors: [AppColors.primary, AppColors.accent],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
                     ),
-                  ],
+                    borderRadius: BorderRadius.circular(32),
+                  ),
+                  child: const HugeIcon(
+                    icon: HugeIcons.strokeRoundedFolderMusic,
+                    size: 56,
+                    color: Colors.white,
+                  ),
+                ),
+                const SizedBox(height: 32),
+                Text(
+                  'Your library is empty',
+                  style: AppTypography.hero.copyWith(fontSize: 22),
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  'Scan your device to find audio files and start listening.',
+                  style: AppTypography.caption.copyWith(height: 1.5),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 36),
+                GestureDetector(
+                  onTap: _scanSongs,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 32,
+                      vertical: 16,
+                    ),
+                    decoration: GlassCard.accent(
+                      radius: 30,
+                      accentColor: AppColors.primary,
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const HugeIcon(
+                          icon: HugeIcons.strokeRoundedSearch01,
+                          color: Colors.white,
+                          size: 20,
+                        ),
+                        const SizedBox(width: 10),
+                        Text(
+                          'Scan Device',
+                          style: AppTypography.bodyMedium.copyWith(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+        Positioned(
+          top: 0,
+          right: 20,
+          child: SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.only(top: 16),
+              child: GestureDetector(
+                onTap: widget.onSettingsTap,
+                child: Container(
+                  width: 40,
+                  height: 40,
+                  decoration: GlassCard.card(radius: 12),
+                  child: const HugeIcon(
+                    icon: HugeIcons.strokeRoundedSettings01,
+                    size: 20,
+                    color: Colors.white,
+                  ),
                 ),
               ),
             ),
-          ],
+          ),
         ),
-      ),
+      ],
     );
   }
 
   Widget _buildContent(
-      SongProvider songProvider, TagProvider tagProvider, AudioProvider audioProvider) {
+    SongProvider songProvider,
+    TagProvider tagProvider,
+    AudioProvider audioProvider,
+  ) {
     return CustomScrollView(
       slivers: [
         // ── App Bar ──────────────────────────────────────────────────────────
@@ -166,11 +208,11 @@ class _VibePageState extends State<VibePage> {
           pinned: false,
           floating: true,
           snap: true,
-          expandedHeight: 120,
+          expandedHeight: 74,
           toolbarHeight: 0,
           flexibleSpace: FlexibleSpaceBar(
             background: Container(
-              padding: const EdgeInsets.fromLTRB(20, 0, 20, 16),
+              padding: const EdgeInsets.fromLTRB(20, 0, 20, 8),
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.end,
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -188,7 +230,12 @@ class _VibePageState extends State<VibePage> {
                               ),
                             ),
                             const SizedBox(height: 2),
-                            Text('MyMusic', style: AppTypography.display.copyWith(fontSize: 28)),
+                            Text(
+                              'MyMusic',
+                              style: AppTypography.display.copyWith(
+                                fontSize: 28,
+                              ),
+                            ),
                           ],
                         ),
                       ),
@@ -196,22 +243,26 @@ class _VibePageState extends State<VibePage> {
                       GestureDetector(
                         onTap: _isScanning ? null : _scanSongs,
                         child: Container(
-                          width: 40,
-                          height: 40,
+                          width: 34,
+                          height: 34,
                           decoration: GlassCard.card(radius: 12),
                           child: _isScanning
                               ? const Center(
                                   child: SizedBox(
-                                    width: 18,
-                                    height: 18,
+                                    width: 16,
+                                    height: 16,
                                     child: CircularProgressIndicator(
                                       strokeWidth: 2,
                                       color: AppColors.primary,
                                     ),
                                   ),
                                 )
-                              : const HugeIcon(icon: HugeIcons.strokeRoundedArrowReloadHorizontal,
-                                  size: 20, color: AppColors.textSecondary),
+                              : const HugeIcon(
+                                  icon: HugeIcons
+                                      .strokeRoundedArrowReloadHorizontal,
+                                  size: 16,
+                                  color: AppColors.textSecondary,
+                                ),
                         ),
                       ),
                       const SizedBox(width: 8),
@@ -220,30 +271,36 @@ class _VibePageState extends State<VibePage> {
                         onTap: () {
                           final songs = context.read<SongProvider>().songs;
                           if (songs.isNotEmpty) {
-                            context.read<AudioProvider>().shuffleAllSongs(songs);
+                            context.read<AudioProvider>().shuffleAllSongs(
+                              songs,
+                            );
                           }
                         },
                         child: Container(
-                          width: 40,
-                          height: 40,
+                          width: 34,
+                          height: 34,
                           decoration: GlassCard.card(radius: 12),
-                          child: const HugeIcon(icon: HugeIcons.strokeRoundedShuffle,
-                              size: 20, color: AppColors.textSecondary),
-                        ),
-                      ),
-                      if (widget.onMoreTap != null) ...[
-                        const SizedBox(width: 8),
-                        GestureDetector(
-                          onTap: widget.onMoreTap,
-                          child: Container(
-                            width: 40,
-                            height: 40,
-                            decoration: GlassCard.card(radius: 12),
-                            child: const HugeIcon(icon: HugeIcons.strokeRoundedMoreVertical,
-                                size: 20, color: AppColors.textSecondary),
+                          child: const HugeIcon(
+                            icon: HugeIcons.strokeRoundedShuffle,
+                            size: 16,
+                            color: AppColors.textSecondary,
                           ),
                         ),
-                      ],
+                      ),
+                      const SizedBox(width: 8),
+                      GestureDetector(
+                        onTap: widget.onSettingsTap,
+                        child: Container(
+                          width: 34,
+                          height: 34,
+                          decoration: GlassCard.card(radius: 12),
+                          child: const HugeIcon(
+                            icon: HugeIcons.strokeRoundedSettings01,
+                            size: 16,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ),
                     ],
                   ),
                 ],
@@ -279,14 +336,16 @@ class _VibePageState extends State<VibePage> {
                       itemCount: recentSongs.length,
                       itemBuilder: (context, index) {
                         final song = recentSongs[index];
-                        final isActive = audioProvider.currentSong?.id == song.id;
+                        final isActive =
+                            audioProvider.currentSong?.id == song.id;
                         final colors = AppColors.seedGradient(song.title);
                         return GestureDetector(
                           onTap: () {
                             audioProvider.playAllSongs(
                               songProvider.songs,
-                              startIndex: songProvider.songs
-                                  .indexWhere((s) => s.id == song.id),
+                              startIndex: songProvider.songs.indexWhere(
+                                (s) => s.id == song.id,
+                              ),
                             );
                           },
                           child: Container(
@@ -296,46 +355,35 @@ class _VibePageState extends State<VibePage> {
                               children: [
                                 AnimatedContainer(
                                   duration: const Duration(milliseconds: 200),
-                                  width: 76,
-                                  height: 76,
-                                  decoration: BoxDecoration(
-                                    gradient: LinearGradient(
-                                      colors: colors,
-                                      begin: Alignment.topLeft,
-                                      end: Alignment.bottomRight,
-                                    ),
-                                    borderRadius: BorderRadius.circular(16),
-                                    border: isActive
-                                        ? Border.all(
+                                  decoration: isActive
+                                      ? BoxDecoration(
+                                          borderRadius: BorderRadius.circular(16),
+                                          border: Border.all(
                                             color: AppColors.primary,
                                             width: 2,
-                                          )
-                                        : null,
-                                    boxShadow: isActive
-                                        ? [
+                                          ),
+                                          boxShadow: [
                                             BoxShadow(
-                                              color: AppColors.primary.withValues(alpha: 0.4),
+                                              color: AppColors.primary
+                                                  .withValues(alpha: 0.4),
                                               blurRadius: 12,
-                                            )
-                                          ]
-                                        : null,
-                                  ),
-                                  child: Center(
-                                    child: Text(
-                                      song.title.isNotEmpty
-                                          ? song.title[0].toUpperCase()
-                                          : '♪',
-                                      style: AppTypography.hero.copyWith(
-                                        color: Colors.white.withValues(alpha: 0.9),
-                                        fontSize: 28,
-                                      ),
-                                    ),
+                                            ),
+                                          ],
+                                        )
+                                      : null,
+                                  child: SongArtWidget(
+                                    song: song,
+                                    colors: colors,
+                                    isPlaying: isActive,
+                                    size: 76,
                                   ),
                                 ),
                                 const SizedBox(height: 6),
                                 Text(
                                   song.title,
-                                  style: AppTypography.caption.copyWith(fontSize: 10),
+                                  style: AppTypography.caption.copyWith(
+                                    fontSize: 10,
+                                  ),
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
                                   textAlign: TextAlign.center,
@@ -403,24 +451,21 @@ class _VibePageState extends State<VibePage> {
         ),
 
         SliverList(
-          delegate: SliverChildBuilderDelegate(
-            (context, index) {
-              final song = songProvider.songs[index];
-              return SongTile(
-                song: song,
-                index: index,
-                isPlaying: audioProvider.currentSong?.id == song.id,
-                onTap: () {
-                  audioProvider.playAllSongs(
-                    songProvider.songs,
-                    startIndex: index,
-                  );
-                },
-                onLongPress: () => _showSongOptions(song),
-              );
-            },
-            childCount: songProvider.songs.length,
-          ),
+          delegate: SliverChildBuilderDelegate((context, index) {
+            final song = songProvider.songs[index];
+            return SongTile(
+              song: song,
+              index: index,
+              isPlaying: audioProvider.currentSong?.id == song.id,
+              onTap: () {
+                audioProvider.playAllSongs(
+                  songProvider.songs,
+                  startIndex: index,
+                );
+              },
+              onLongPress: () => _showSongOptions(song),
+            );
+          }, childCount: songProvider.songs.length),
         ),
 
         const SliverPadding(padding: EdgeInsets.only(bottom: 20)),
@@ -469,7 +514,11 @@ class _VibePageState extends State<VibePage> {
                         width: 40,
                         height: 40,
                         decoration: GlassCard.card(radius: 12),
-                        child: const Icon(Icons.edit, color: AppColors.primary, size: 20),
+                        child: const Icon(
+                          Icons.edit,
+                          color: AppColors.primary,
+                          size: 20,
+                        ),
                       ),
                       title: Text('Edit Name', style: AppTypography.body),
                       onTap: () {
@@ -482,7 +531,11 @@ class _VibePageState extends State<VibePage> {
                         width: 40,
                         height: 40,
                         decoration: GlassCard.card(radius: 12),
-                        child: const HugeIcon(icon: HugeIcons.strokeRoundedTag01, color: AppColors.primary, size: 20),
+                        child: const HugeIcon(
+                          icon: HugeIcons.strokeRoundedTag01,
+                          color: AppColors.primary,
+                          size: 20,
+                        ),
                       ),
                       title: Text('Assign to tag', style: AppTypography.body),
                       onTap: () {
@@ -495,11 +548,17 @@ class _VibePageState extends State<VibePage> {
                         width: 40,
                         height: 40,
                         decoration: GlassCard.card(radius: 12),
-                        child: const HugeIcon(icon: HugeIcons.strokeRoundedDelete01, color: AppColors.secondary, size: 20),
+                        child: const HugeIcon(
+                          icon: HugeIcons.strokeRoundedDelete01,
+                          color: AppColors.secondary,
+                          size: 20,
+                        ),
                       ),
                       title: Text(
                         'Remove from library',
-                        style: AppTypography.body.copyWith(color: AppColors.secondary),
+                        style: AppTypography.body.copyWith(
+                          color: AppColors.secondary,
+                        ),
                       ),
                       onTap: () {
                         Navigator.pop(context);
@@ -530,7 +589,9 @@ class _VibePageState extends State<VibePage> {
           style: AppTypography.body,
           decoration: InputDecoration(
             hintText: 'New song name',
-            hintStyle: AppTypography.body.copyWith(color: AppColors.textSecondary),
+            hintStyle: AppTypography.body.copyWith(
+              color: AppColors.textSecondary,
+            ),
             filled: true,
             fillColor: AppColors.surface,
             border: OutlineInputBorder(
@@ -543,8 +604,12 @@ class _VibePageState extends State<VibePage> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: Text('Cancel',
-                style: AppTypography.body.copyWith(color: AppColors.textSecondary)),
+            child: Text(
+              'Cancel',
+              style: AppTypography.body.copyWith(
+                color: AppColors.textSecondary,
+              ),
+            ),
           ),
           TextButton(
             onPressed: () async {
@@ -552,8 +617,11 @@ class _VibePageState extends State<VibePage> {
               if (newTitle.isNotEmpty && newTitle != song.title) {
                 final nav = Navigator.of(context);
                 final scaffoldMsg = ScaffoldMessenger.of(context);
-                final success = await context.read<SongProvider>().renameSong(song, newTitle);
-                
+                final success = await context.read<SongProvider>().renameSong(
+                  song,
+                  newTitle,
+                );
+
                 nav.pop();
                 if (success) {
                   scaffoldMsg.showSnackBar(
@@ -568,8 +636,10 @@ class _VibePageState extends State<VibePage> {
                 Navigator.pop(context);
               }
             },
-            child: Text('Save',
-                style: AppTypography.body.copyWith(color: AppColors.primary)),
+            child: Text(
+              'Save',
+              style: AppTypography.body.copyWith(color: AppColors.primary),
+            ),
           ),
         ],
       ),
@@ -588,16 +658,22 @@ class _VibePageState extends State<VibePage> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: Text('Cancel',
-                style: AppTypography.body.copyWith(color: AppColors.textSecondary)),
+            child: Text(
+              'Cancel',
+              style: AppTypography.body.copyWith(
+                color: AppColors.textSecondary,
+              ),
+            ),
           ),
           TextButton(
             onPressed: () {
               context.read<SongProvider>().deleteSong(songId);
               Navigator.pop(context);
             },
-            child: Text('Remove',
-                style: AppTypography.body.copyWith(color: AppColors.secondary)),
+            child: Text(
+              'Remove',
+              style: AppTypography.body.copyWith(color: AppColors.secondary),
+            ),
           ),
         ],
       ),

@@ -74,7 +74,7 @@ class _AppShellState extends State<_AppShell> with SingleTickerProviderStateMixi
   Widget _buildPage() {
     switch (_tab) {
       case _NavTab.home:
-        return VibePage(onMoreTap: _showMoreSheet);
+        return VibePage(onSettingsTap: _navigateToSettings);
       case _NavTab.search:
         return const SearchPage();
       case _NavTab.tags:
@@ -82,35 +82,16 @@ class _AppShellState extends State<_AppShell> with SingleTickerProviderStateMixi
     }
   }
 
-  void _showMoreSheet() {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: AppColors.surfaceHigh,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
-      ),
-      builder: (context) => _MoreSheet(
-        onSettings: () {
-          Navigator.pop(context);
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (_) => SettingsPage(
-                onNavigateAbout: () => Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (_) => const AboutPage()),
-                ),
-              ),
-            ),
-          );
-        },
-        onAbout: () {
-          Navigator.pop(context);
-          Navigator.push(
+  void _navigateToSettings() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => SettingsPage(
+          onNavigateAbout: () => Navigator.push(
             context,
             MaterialPageRoute(builder: (_) => const AboutPage()),
-          );
-        },
+          ),
+        ),
       ),
     );
   }
@@ -251,57 +232,3 @@ class _NavItem extends StatelessWidget {
   }
 }
 
-// ── More Sheet ────────────────────────────────────────────────────────────────
-
-class _MoreSheet extends StatelessWidget {
-  final VoidCallback onSettings;
-  final VoidCallback onAbout;
-
-  const _MoreSheet({required this.onSettings, required this.onAbout});
-
-  @override
-  Widget build(BuildContext context) {
-    return SafeArea(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Container(
-            width: 40,
-            height: 4,
-            margin: const EdgeInsets.only(top: 12, bottom: 20),
-            decoration: BoxDecoration(
-              color: AppColors.surfaceBorder,
-              borderRadius: BorderRadius.circular(2),
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20),
-            child: Text('More', style: AppTypography.heading),
-          ),
-          const SizedBox(height: 12),
-          ListTile(
-            leading: Container(
-              width: 40,
-              height: 40,
-              decoration: GlassCard.card(radius: 12),
-              child: const HugeIcon(icon: HugeIcons.strokeRoundedSettings01, size: 20, color: AppColors.textSecondary),
-            ),
-            title: Text('Settings', style: AppTypography.body),
-            onTap: onSettings,
-          ),
-          ListTile(
-            leading: Container(
-              width: 40,
-              height: 40,
-              decoration: GlassCard.card(radius: 12),
-              child: const HugeIcon(icon: HugeIcons.strokeRoundedInformationCircle, size: 20, color: AppColors.textSecondary),
-            ),
-            title: Text('About', style: AppTypography.body),
-            onTap: onAbout,
-          ),
-          const SizedBox(height: 16),
-        ],
-      ),
-    );
-  }
-}

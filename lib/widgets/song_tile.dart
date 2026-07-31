@@ -94,7 +94,7 @@ class _SongTileState extends State<SongTile>
                       ),
               ),
             // Art thumbnail
-            _SongTileArt(
+            SongArtWidget(
               song: widget.song,
               colors: colors,
               isPlaying: isPlaying,
@@ -145,22 +145,25 @@ class _SongTileState extends State<SongTile>
 
 // ── Song Tile Art ─────────────────────────────────────────────────────────────
 
-class _SongTileArt extends StatefulWidget {
+class SongArtWidget extends StatefulWidget {
   final Song song;
   final List<Color> colors;
   final bool isPlaying;
+  final double size;
 
-  const _SongTileArt({
+  const SongArtWidget({
+    super.key,
     required this.song,
     required this.colors,
     required this.isPlaying,
+    this.size = 46,
   });
 
   @override
-  State<_SongTileArt> createState() => _SongTileArtState();
+  State<SongArtWidget> createState() => _SongArtWidgetState();
 }
 
-class _SongTileArtState extends State<_SongTileArt> {
+class _SongArtWidgetState extends State<SongArtWidget> {
   Future<Uint8List?>? _imageFuture;
 
   @override
@@ -170,7 +173,7 @@ class _SongTileArtState extends State<_SongTileArt> {
   }
 
   @override
-  void didUpdateWidget(covariant _SongTileArt old) {
+  void didUpdateWidget(covariant SongArtWidget old) {
     super.didUpdateWidget(old);
     if (old.song.id != widget.song.id ||
         old.song.custom_art_path != widget.song.custom_art_path) {
@@ -208,8 +211,8 @@ class _SongTileArtState extends State<_SongTileArt> {
     return AnimatedContainer(
       duration: const Duration(milliseconds: 250),
       curve: Curves.easeOut,
-      width: 46,
-      height: 46,
+      width: widget.size,
+      height: widget.size,
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: colors,
