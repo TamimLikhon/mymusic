@@ -12,6 +12,7 @@ import 'pages/tags/tag_detail_page.dart';
 import 'pages/settings/settings_page.dart';
 import 'pages/about/about_page.dart';
 import 'pages/search/search_page.dart';
+import 'pages/stream/stream_page.dart';
 
 class MyMusicApp extends StatefulWidget {
   const MyMusicApp({super.key});
@@ -55,7 +56,7 @@ class _MyMusicAppState extends State<MyMusicApp> {
 
 // ── Navigation Items ─────────────────────────────────────────────────────────
 
-enum _NavTab { home, search, tags }
+enum _NavTab { home, stream, search, tags }
 
 class _AppShell extends StatefulWidget {
   const _AppShell();
@@ -75,6 +76,8 @@ class _AppShellState extends State<_AppShell> with SingleTickerProviderStateMixi
     switch (_tab) {
       case _NavTab.home:
         return VibePage(onSettingsTap: _navigateToSettings);
+      case _NavTab.stream:
+        return const StreamPage();
       case _NavTab.search:
         return const SearchPage();
       case _NavTab.tags:
@@ -142,6 +145,7 @@ class _SpotifyBottomNav extends StatelessWidget {
   Widget build(BuildContext context) {
     final items = [
       (HugeIcons.strokeRoundedHome01, HugeIcons.strokeRoundedHome01, 'Home'),
+      (HugeIcons.strokeRoundedRadio, HugeIcons.strokeRoundedRadio, 'Stream'),
       (HugeIcons.strokeRoundedSearch01, HugeIcons.strokeRoundedSearch01, 'Search'),
       (HugeIcons.strokeRoundedFolderMusic, HugeIcons.strokeRoundedFolderMusic, 'Library'),
     ];

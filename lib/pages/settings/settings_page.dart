@@ -35,8 +35,11 @@ class SettingsPage extends StatelessWidget {
                 width: 36,
                 height: 36,
                 decoration: GlassCard.card(radius: 10),
-                child: const HugeIcon(icon: HugeIcons.strokeRoundedArrowLeft01,
-                    size: 20, color: AppColors.textPrimary),
+                child: const HugeIcon(
+                  icon: HugeIcons.strokeRoundedArrowLeft01,
+                  size: 20,
+                  color: AppColors.textPrimary,
+                ),
               ),
               onPressed: () => Navigator.pop(context),
             ),
@@ -60,7 +63,9 @@ class SettingsPage extends StatelessWidget {
                       onTap: () {
                         context.read<SongProvider>().scanAndImport();
                         ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Scanning for songs...')),
+                          const SnackBar(
+                            content: Text('Scanning for songs...'),
+                          ),
                         );
                       },
                     ),
@@ -74,7 +79,8 @@ class SettingsPage extends StatelessWidget {
                         context: context,
                         icon: HugeIcons.strokeRoundedFolderMusic,
                         title: 'Library Size',
-                        subtitle: '${songProvider.songs.length} songs in library',
+                        subtitle:
+                            '${songProvider.songs.length} songs in library',
                         onTap: () {},
                       ),
                     ),
@@ -95,7 +101,7 @@ class SettingsPage extends StatelessWidget {
                       context: context,
                       icon: HugeIcons.strokeRoundedInformationCircle,
                       title: 'About MyMusic',
-                      subtitle: 'Version 1.0.0',
+                      subtitle: 'Version 1.0.1',
                       onTap: () {
                         if (onNavigateAbout != null) {
                           onNavigateAbout!();
@@ -115,7 +121,10 @@ class SettingsPage extends StatelessWidget {
     );
   }
 
-  Widget _buildDirectoriesTile(BuildContext context, SongProvider songProvider) {
+  Widget _buildDirectoriesTile(
+    BuildContext context,
+    SongProvider songProvider,
+  ) {
     final dirs = songProvider.musicDirectories;
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
@@ -133,13 +142,18 @@ class SettingsPage extends StatelessWidget {
                   color: AppColors.primary.withValues(alpha: 0.15),
                   borderRadius: BorderRadius.circular(10),
                 ),
-                child: const HugeIcon(icon: HugeIcons.strokeRoundedFolder01,
-                    color: AppColors.primary, size: 20),
+                child: const HugeIcon(
+                  icon: HugeIcons.strokeRoundedFolder01,
+                  color: AppColors.primary,
+                  size: 20,
+                ),
               ),
               const SizedBox(width: 12),
               Text(
                 'Music Folders',
-                style: AppTypography.bodyMedium.copyWith(fontWeight: FontWeight.w600),
+                style: AppTypography.bodyMedium.copyWith(
+                  fontWeight: FontWeight.w600,
+                ),
               ),
             ],
           ),
@@ -153,38 +167,53 @@ class SettingsPage extends StatelessWidget {
               ),
             )
           else
-            ...dirs.map((dir) => Padding(
-                  padding: const EdgeInsets.only(left: 52, bottom: 6),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: Text(
-                          dir,
-                          style: AppTypography.caption,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
+            ...dirs.map(
+              (dir) => Padding(
+                padding: const EdgeInsets.only(left: 52, bottom: 6),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        dir,
+                        style: AppTypography.caption,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                       ),
-                      GestureDetector(
-                        onTap: () => songProvider.removeDirectory(dir),
-                        child: const HugeIcon(icon: HugeIcons.strokeRoundedCancel01,
-                            size: 16, color: AppColors.textSecondary),
+                    ),
+                    GestureDetector(
+                      onTap: () => songProvider.removeDirectory(dir),
+                      child: const HugeIcon(
+                        icon: HugeIcons.strokeRoundedCancel01,
+                        size: 16,
+                        color: AppColors.textSecondary,
                       ),
-                    ],
-                  ),
-                )),
+                    ),
+                  ],
+                ),
+              ),
+            ),
           const SizedBox(height: 8),
           Padding(
             padding: const EdgeInsets.only(left: 52),
             child: GestureDetector(
               onTap: () => _pickDirectory(context),
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                decoration: GlassCard.accent(radius: 20, accentColor: AppColors.primary),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 8,
+                ),
+                decoration: GlassCard.accent(
+                  radius: 20,
+                  accentColor: AppColors.primary,
+                ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const HugeIcon(icon: HugeIcons.strokeRoundedAdd01, size: 15, color: Colors.white),
+                    const HugeIcon(
+                      icon: HugeIcons.strokeRoundedAdd01,
+                      size: 15,
+                      color: Colors.white,
+                    ),
                     const SizedBox(width: 6),
                     Text(
                       'Add Folder',
@@ -203,7 +232,10 @@ class SettingsPage extends StatelessWidget {
     );
   }
 
-  Widget _buildSection({required String title, required List<Widget> children}) {
+  Widget _buildSection({
+    required String title,
+    required List<Widget> children,
+  }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -249,15 +281,22 @@ class SettingsPage extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(title,
-                        style: AppTypography.bodyMedium.copyWith(fontWeight: FontWeight.w600)),
+                    Text(
+                      title,
+                      style: AppTypography.bodyMedium.copyWith(
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
                     const SizedBox(height: 2),
                     Text(subtitle, style: AppTypography.caption),
                   ],
                 ),
               ),
-              const HugeIcon(icon: HugeIcons.strokeRoundedArrowRight01,
-                  size: 18, color: AppColors.textDisabled),
+              const HugeIcon(
+                icon: HugeIcons.strokeRoundedArrowRight01,
+                size: 18,
+                color: AppColors.textDisabled,
+              ),
             ],
           ),
         ),
@@ -272,13 +311,20 @@ class SettingsPage extends StatelessWidget {
         title: Text('Clear All Data', style: AppTypography.heading),
         content: Text(
           'This will remove all songs and tags from your library. Songs on your device will not be deleted.',
-          style: AppTypography.body.copyWith(color: AppColors.textSecondary, height: 1.5),
+          style: AppTypography.body.copyWith(
+            color: AppColors.textSecondary,
+            height: 1.5,
+          ),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: Text('Cancel',
-                style: AppTypography.body.copyWith(color: AppColors.textSecondary)),
+            child: Text(
+              'Cancel',
+              style: AppTypography.body.copyWith(
+                color: AppColors.textSecondary,
+              ),
+            ),
           ),
           TextButton(
             onPressed: () async {
@@ -292,8 +338,10 @@ class SettingsPage extends StatelessWidget {
                 const SnackBar(content: Text('All data cleared')),
               );
             },
-            child: Text('Clear',
-                style: AppTypography.body.copyWith(color: AppColors.secondary)),
+            child: Text(
+              'Clear',
+              style: AppTypography.body.copyWith(color: AppColors.secondary),
+            ),
           ),
         ],
       ),

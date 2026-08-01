@@ -5,6 +5,7 @@ import 'data/database/app_database.dart';
 import 'providers/song_provider.dart';
 import 'providers/tag_provider.dart';
 import 'providers/audio_provider.dart';
+import 'providers/stream_provider.dart';
 import 'app.dart';
 
 void main() async {
@@ -27,6 +28,7 @@ void main() async {
         ChangeNotifierProvider(create: (_) => SongProvider(database)),
         ChangeNotifierProvider(create: (_) => TagProvider(database)),
         ChangeNotifierProvider(create: (_) => AudioProvider(database)),
+        ChangeNotifierProvider(create: (_) => MusicStreamProvider()),
       ],
       child: const MyMusicApp(),
     ),

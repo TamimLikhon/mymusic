@@ -10,6 +10,7 @@ dependencies:
   audio_metadata_reader: ^1.6.0
   audio_session: ^0.2.4
   drift: ^2.34.2
+  yt_flutter_musicapi: 3.4.4
   file_picker: ^8.0.0
   flutter:
     sdk: flutter
