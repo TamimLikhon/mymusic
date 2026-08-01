@@ -4,8 +4,10 @@ import 'package:just_audio/just_audio.dart';
 import 'package:just_audio_background/just_audio_background.dart';
 import 'package:yt_flutter_musicapi/yt_flutter_musicapi.dart';
 import '../data/models/stream_song.dart';
+import 'playlist_provider.dart';
 
 class MusicStreamProvider extends ChangeNotifier {
+  PlaylistProvider? playlistProvider;
   final _api = YtFlutterMusicapi();
   final AudioPlayer _player = AudioPlayer();
 
@@ -170,6 +172,8 @@ class MusicStreamProvider extends ChangeNotifier {
         ),
       );
       await _player.play();
+      // Record in history
+      playlistProvider?.addToHistory(song);
     } catch (e) {
       if (kDebugMode) {
         print('Error playing song: $e');

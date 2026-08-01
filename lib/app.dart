@@ -4,7 +4,6 @@ import 'services/permission_service.dart';
 import 'core/theme/app_theme.dart';
 import 'core/theme/app_colors.dart';
 import 'core/theme/app_typography.dart';
-import 'core/theme/glass_card.dart';
 import 'widgets/mini_player.dart';
 import 'pages/vibe/vibe_page.dart';
 import 'pages/tags/all_tags_page.dart';
@@ -44,9 +43,7 @@ class _MyMusicAppState extends State<MyMusicApp> {
       onGenerateRoute: (settings) {
         if (settings.name?.startsWith('/tag/') == true) {
           final tagId = settings.name!.replaceFirst('/tag/', '');
-          return MaterialPageRoute(
-            builder: (_) => TagDetailPage(tagId: tagId),
-          );
+          return MaterialPageRoute(builder: (_) => TagDetailPage(tagId: tagId));
         }
         return null;
       },
@@ -65,7 +62,8 @@ class _AppShell extends StatefulWidget {
   State<_AppShell> createState() => _AppShellState();
 }
 
-class _AppShellState extends State<_AppShell> with SingleTickerProviderStateMixin {
+class _AppShellState extends State<_AppShell>
+    with SingleTickerProviderStateMixin {
   _NavTab _tab = _NavTab.home;
 
   void _onTabChanged(int index) {
@@ -107,23 +105,15 @@ class _AppShellState extends State<_AppShell> with SingleTickerProviderStateMixi
         duration: const Duration(milliseconds: 280),
         switchInCurve: Curves.easeOut,
         switchOutCurve: Curves.easeIn,
-        transitionBuilder: (child, animation) => FadeTransition(
-          opacity: animation,
-          child: child,
-        ),
-        child: KeyedSubtree(
-          key: ValueKey(_tab),
-          child: _buildPage(),
-        ),
+        transitionBuilder: (child, animation) =>
+            FadeTransition(opacity: animation, child: child),
+        child: KeyedSubtree(key: ValueKey(_tab), child: _buildPage()),
       ),
       bottomNavigationBar: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
           const MiniPlayer(),
-          _SpotifyBottomNav(
-            currentIndex: _tab.index,
-            onTap: _onTabChanged,
-          ),
+          _SpotifyBottomNav(currentIndex: _tab.index, onTap: _onTabChanged),
         ],
       ),
     );
@@ -136,18 +126,23 @@ class _SpotifyBottomNav extends StatelessWidget {
   final int currentIndex;
   final ValueChanged<int> onTap;
 
-  const _SpotifyBottomNav({
-    required this.currentIndex,
-    required this.onTap,
-  });
+  const _SpotifyBottomNav({required this.currentIndex, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
     final items = [
       (HugeIcons.strokeRoundedHome01, HugeIcons.strokeRoundedHome01, 'Home'),
       (HugeIcons.strokeRoundedRadio, HugeIcons.strokeRoundedRadio, 'Stream'),
-      (HugeIcons.strokeRoundedSearch01, HugeIcons.strokeRoundedSearch01, 'Search'),
-      (HugeIcons.strokeRoundedFolderMusic, HugeIcons.strokeRoundedFolderMusic, 'Library'),
+      (
+        HugeIcons.strokeRoundedSearch01,
+        HugeIcons.strokeRoundedSearch01,
+        'Search',
+      ),
+      (
+        HugeIcons.strokeRoundedFolderMusic,
+        HugeIcons.strokeRoundedFolderMusic,
+        'Library',
+      ),
     ];
 
     return Container(
@@ -235,4 +230,3 @@ class _NavItem extends StatelessWidget {
     );
   }
 }
-

@@ -5,6 +5,7 @@ import 'package:hugeicons/hugeicons.dart';
 import '../../core/theme/app_typography.dart';
 import '../../providers/stream_provider.dart';
 import '../../widgets/retro_seek_bar.dart';
+import '../../widgets/add_to_playlist_sheet.dart';
 
 class StreamPlayerSheet extends StatelessWidget {
   const StreamPlayerSheet({super.key});
@@ -139,6 +140,22 @@ class StreamPlayerSheet extends StatelessWidget {
                             icon: HugeIcons.strokeRoundedNext,
                             onPressed: streamProvider.next,
                             size: 28,
+                          ),
+                          IconButton(
+                            icon: Icon(
+                              Icons.playlist_add_rounded,
+                              color: Colors.white.withValues(alpha: 0.85),
+                              size: 28,
+                            ),
+                            onPressed: () {
+                              showModalBottomSheet(
+                                context: context,
+                                isScrollControlled: true,
+                                backgroundColor: Colors.transparent,
+                                builder: (_) => AddToPlaylistSheet(song: song),
+                              );
+                            },
+                            padding: const EdgeInsets.all(12),
                           ),
                         ],
                       ),

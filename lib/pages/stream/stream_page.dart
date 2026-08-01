@@ -5,6 +5,9 @@ import 'package:hugeicons/hugeicons.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_typography.dart';
 import '../../providers/stream_provider.dart';
+import '../../providers/playlist_provider.dart';
+import 'create_playlist_page.dart';
+import 'playlist_detail_sheet.dart';
 import '../../widgets/stream_mini_player.dart';
 import '../../widgets/animated_bars.dart';
 
@@ -81,6 +84,22 @@ class _StreamPageState extends State<StreamPage> {
                         'Stream',
                         style: AppTypography.heading.copyWith(fontSize: 26),
                       ),
+                      const Spacer(),
+                      IconButton(
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => const CreatePlaylistPage(),
+                            ),
+                          );
+                        },
+                        icon: const Icon(
+                          Icons.add_circle_outline_rounded,
+                          color: AppColors.textPrimary,
+                          size: 26,
+                        ),
+                      ),
                     ],
                   ),
                   const SizedBox(height: 16),
@@ -136,7 +155,7 @@ class _StreamPageState extends State<StreamPage> {
               ),
             ),
 
-            // ── Results ────────────────────────────────────────────────────
+            // ── Results / Home ─────────────────────────────────────────────
             Expanded(
               child: streamProvider.error != null
                   ? _ErrorView(
@@ -144,9 +163,11 @@ class _StreamPageState extends State<StreamPage> {
                       onRetry: () =>
                           streamProvider.search(_searchController.text),
                     )
+                  : _searchController.text.trim().isEmpty && streamProvider.results.isEmpty && !streamProvider.isSearching
+                  ? const _StreamHomeView()
                   : streamProvider.results.isEmpty && !streamProvider.isSearching
-                  ? const _EmptyView()
-                  : _ResultsList(streamProvider: streamProvider),
+                      ? const _EmptyView()
+                      : _ResultsList(streamProvider: streamProvider),
             ),
 
             // ── Mini Player ────────────────────────────────────────────────
@@ -462,3 +483,198 @@ class _Placeholder extends StatelessWidget {
     );
   }
 }
+
+// ── Stream Home View ──────────────────────────────────────────────────────────
+
+class _StreamHomeView extends StatelessWidget {
+  const _StreamHomeView();
+
+  @override
+  Widget build(BuildContext context) {
+    final playlistProvider = context.watch<PlaylistProvider>();
+    final history = playlistProvider.history;
+    final playlists = playlistProvider.playlists;
+
+    if (history.isEmpty && playlists.isEmpty) {
+      return const _EmptyView();
+    }
+
+    return CustomScrollView(
+      slivers: [
+        if (history.isNotEmpty) ...[
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(20, 24, 20, 12),
+              child: Text(
+                'Recently Played',
+                style: AppTypography.heading.copyWith(fontSize: 18),
+              ),
+            ),
+          ),
+          SliverToBoxAdapter(
+            child: SizedBox(
+              height: 170,
+              child: ListView.builder(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                scrollDirection: Axis.horizontal,
+                itemCount: history.length,
+                itemBuilder: (context, index) {
+                  final song = history[index];
+                  return GestureDetector(
+                    onTap: () => context.read<MusicStreamProvider>().playSong(song, -1),
+                    child: Container(
+                      width: 100,
+                      margin: const EdgeInsets.symmetric(horizontal: 6),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          ClipRRect(
+                            borderRadius: BorderRadius.circular(12),
+                            child: song.thumbUrl != null
+                                ? Image.network(
+                                    song.thumbUrl!,
+                                    width: 100,
+                                    height: 100,
+                                    fit: BoxFit.cover,
+                                    errorBuilder: (_, __, ___) => _Placeholder(size: 100),
+                                  )
+                                : _Placeholder(size: 100),
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            song.title,
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            style: AppTypography.caption.copyWith(
+                              fontWeight: FontWeight.w600,
+                              color: AppColors.textPrimary,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ),
+          ),
+        ],
+        if (playlists.isNotEmpty) ...[
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(20, 32, 20, 12),
+              child: Text(
+                'Your Playlists',
+                style: AppTypography.heading.copyWith(fontSize: 18),
+              ),
+            ),
+          ),
+          SliverPadding(
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            sliver: SliverGrid(
+              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: 2,
+                mainAxisSpacing: 16,
+                crossAxisSpacing: 16,
+                childAspectRatio: 0.85,
+              ),
+              delegate: SliverChildBuilderDelegate(
+                (context, index) {
+                  final playlist = playlists[index];
+                  return GestureDetector(
+                    onTap: () {
+                      showModalBottomSheet(
+                        context: context,
+                        isScrollControlled: true,
+                        backgroundColor: Colors.transparent,
+                        builder: (_) => PlaylistDetailSheet(playlist: playlist),
+                      );
+                    },
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: AppColors.surface,
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(color: AppColors.surfaceBorder),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          Expanded(
+                            child: ClipRRect(
+                              borderRadius: const BorderRadius.vertical(top: Radius.circular(15)),
+                              child: playlist.thumbnailUrl != null
+                                  ? Image.network(
+                                      playlist.thumbnailUrl!,
+                                      fit: BoxFit.cover,
+                                      errorBuilder: (_, __, ___) => Container(
+                                        decoration: BoxDecoration(
+                                          gradient: LinearGradient(
+                                            colors: AppColors.seedGradient(playlist.name),
+                                            begin: Alignment.topLeft,
+                                            end: Alignment.bottomRight,
+                                          ),
+                                        ),
+                                        child: const Center(
+                                          child: HugeIcon(
+                                            icon: HugeIcons.strokeRoundedMusicNote01,
+                                            color: Colors.white70,
+                                            size: 32,
+                                          ),
+                                        ),
+                                      ),
+                                    )
+                                  : Container(
+                                      decoration: BoxDecoration(
+                                        gradient: LinearGradient(
+                                          colors: AppColors.seedGradient(playlist.name),
+                                          begin: Alignment.topLeft,
+                                          end: Alignment.bottomRight,
+                                        ),
+                                      ),
+                                      child: const Center(
+                                        child: HugeIcon(
+                                          icon: HugeIcons.strokeRoundedMusicNote01,
+                                          color: Colors.white70,
+                                          size: 32,
+                                        ),
+                                      ),
+                                    ),
+                            ),
+                          ),
+                          Padding(
+                            padding: const EdgeInsets.all(12),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  playlist.name,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: AppTypography.bodyMedium.copyWith(
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                                const SizedBox(height: 2),
+                                Text(
+                                  '${playlist.songs.length} song${playlist.songs.length == 1 ? '' : 's'}',
+                                  style: AppTypography.caption,
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
+                },
+                childCount: playlists.length,
+              ),
+            ),
+          ),
+        ],
+        const SliverToBoxAdapter(child: SizedBox(height: 100)),
+      ],
+    );
+  }
+}
+

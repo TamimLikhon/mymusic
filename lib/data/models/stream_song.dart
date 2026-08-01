@@ -39,6 +39,26 @@ class StreamSong {
     );
   }
 
+  Map<String, dynamic> toJson() => {
+        'title': title,
+        'artists': artists,
+        'duration': duration,
+        'videoId': videoId,
+        'thumbUrl': thumbUrl,
+        'audioUrl': audioUrl,
+      };
+
+  factory StreamSong.fromJson(Map<String, dynamic> json) {
+    return StreamSong(
+      title: json['title'] ?? 'Unknown Title',
+      artists: json['artists'] ?? 'Unknown Artist',
+      duration: json['duration'] ?? '0:00',
+      videoId: json['videoId'] ?? '',
+      thumbUrl: json['thumbUrl'],
+      audioUrl: json['audioUrl'],
+    );
+  }
+
   StreamSong copyWith({
     String? title,
     String? artists,
