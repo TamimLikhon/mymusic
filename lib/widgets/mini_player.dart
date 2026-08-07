@@ -148,6 +148,7 @@ class _MiniPlayerContent extends StatelessWidget {
                           icon: HugeIcons.strokeRoundedPrevious,
                           onPressed: audioProvider.previous,
                           size: 22,
+                          tooltip: 'Previous',
                         ),
                         _PlayPauseBtn(
                           isPlaying: audioProvider.isPlaying,
@@ -158,6 +159,7 @@ class _MiniPlayerContent extends StatelessWidget {
                           icon: HugeIcons.strokeRoundedNext,
                           onPressed: audioProvider.next,
                           size: 22,
+                          tooltip: 'Next',
                         ),
                       ],
                     ),
@@ -176,17 +178,24 @@ class _FlatIconButton extends StatelessWidget {
   final dynamic icon;
   final VoidCallback? onPressed;
   final double size;
+  final String? tooltip;
 
-  const _FlatIconButton({required this.icon, this.onPressed, this.size = 22});
+  const _FlatIconButton({
+    required this.icon,
+    this.onPressed,
+    this.size = 22,
+    this.tooltip,
+  });
 
   @override
   Widget build(BuildContext context) {
     return IconButton(
       icon: HugeIcon(icon: icon, size: size, color: AppColors.textSecondary),
       onPressed: onPressed,
+      tooltip: tooltip,
       splashRadius: 20,
       padding: const EdgeInsets.symmetric(horizontal: 4),
-      constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
+      constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
     );
   }
 }
@@ -204,36 +213,48 @@ class _PlayPauseBtn extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onPressed,
-      child: Container(
-        width: 40,
-        height: 40,
-        margin: const EdgeInsets.symmetric(horizontal: 2),
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: colors,
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
-          borderRadius: BorderRadius.circular(12),
-          boxShadow: [
-            BoxShadow(
-              color: colors[0].withValues(alpha: 0.35),
-              blurRadius: 10,
-              offset: const Offset(0, 4),
+    return Semantics(
+      label: isPlaying ? 'Pause' : 'Play',
+      button: true,
+      child: Material(
+        color: Colors.transparent,
+        child: Ink(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: colors,
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
             ),
-          ],
-        ),
-        child: AnimatedSwitcher(
-          duration: const Duration(milliseconds: 200),
-          child: HugeIcon(
-            icon: isPlaying
-                ? HugeIcons.strokeRoundedPause
-                : HugeIcons.strokeRoundedPlay,
-            key: ValueKey(isPlaying),
-            size: 22,
-            color: Colors.white,
+            borderRadius: BorderRadius.circular(12),
+            boxShadow: [
+              BoxShadow(
+                color: colors[0].withValues(alpha: 0.35),
+                blurRadius: 10,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
+          child: InkWell(
+            onTap: onPressed,
+            borderRadius: BorderRadius.circular(12),
+            splashColor: Colors.white24,
+            child: SizedBox(
+              width: 48,
+              height: 48,
+              child: Center(
+                child: AnimatedSwitcher(
+                  duration: const Duration(milliseconds: 200),
+                  child: HugeIcon(
+                    icon: isPlaying
+                        ? HugeIcons.strokeRoundedPause
+                        : HugeIcons.strokeRoundedPlay,
+                    key: ValueKey(isPlaying),
+                    size: 22,
+                    color: Colors.white,
+                  ),
+                ),
+              ),
+            ),
           ),
         ),
       ),

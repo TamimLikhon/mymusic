@@ -1,11 +1,12 @@
 import 'dart:ui';
-import 'package:flutter/material.dart';
+import 'package:flutter/material.dart' hide RepeatMode;
 import 'package:provider/provider.dart';
 import 'package:hugeicons/hugeicons.dart';
 import '../../core/theme/app_typography.dart';
 import '../../providers/stream_provider.dart';
 import '../../widgets/retro_seek_bar.dart';
 import '../../widgets/add_to_playlist_sheet.dart';
+import '../../widgets/queue_sheet.dart';
 
 class StreamPlayerSheet extends StatelessWidget {
   const StreamPlayerSheet({super.key});
@@ -23,6 +24,7 @@ class StreamPlayerSheet extends StatelessWidget {
       initialChildSize: 0.95,
       minChildSize: 0.5,
       maxChildSize: 0.95,
+      expand: false,
       builder: (context, scrollController) {
         return ClipRRect(
           borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
@@ -34,9 +36,8 @@ class StreamPlayerSheet extends StatelessWidget {
                   child: Image.network(
                     song.thumbUrl!,
                     fit: BoxFit.cover,
-                    errorBuilder: (_, __, ___) => const ColoredBox(
-                      color: Color(0xFF0D0D1A),
-                    ),
+                    errorBuilder: (_, _, _) =>
+                        const ColoredBox(color: Color(0xFF0D0D1A)),
                   ),
                 ),
               Positioned.fill(
@@ -107,7 +108,45 @@ class StreamPlayerSheet extends StatelessWidget {
                       ),
                       const SizedBox(height: 36),
 
-                      // ── Seek Bar (uses ValueListenableBuilder to avoid jank) ──
+                      // ── Extra Controls ───────────────────────────────────
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          IconButton(
+                            icon: Icon(
+                              Icons.playlist_add_rounded,
+                              color: Colors.white.withValues(alpha: 0.85),
+                              size: 28,
+                            ),
+                            onPressed: () {
+                              showModalBottomSheet(
+                                context: context,
+                                isScrollControlled: true,
+                                backgroundColor: Colors.transparent,
+                                builder: (_) => AddToPlaylistSheet(song: song),
+                              );
+                            },
+                          ),
+                          IconButton(
+                            icon: Icon(
+                              Icons.queue_music_rounded,
+                              color: Colors.white.withValues(alpha: 0.85),
+                              size: 28,
+                            ),
+                            onPressed: () {
+                              showModalBottomSheet(
+                                context: context,
+                                isScrollControlled: true,
+                                backgroundColor: Colors.transparent,
+                                builder: (_) => const QueueSheet(),
+                              );
+                            },
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 16),
+
+                      // ── Seek Bar ─────────────────────────────────────────
                       ValueListenableBuilder<Duration>(
                         valueListenable: context
                             .read<MusicStreamProvider>()
@@ -122,10 +161,11 @@ class StreamPlayerSheet extends StatelessWidget {
                       ),
                       const SizedBox(height: 32),
 
-                      // ── Controls ───────────────────────────────────────
+                      // ── Main Controls ────────────────────────────────────
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                         children: [
+                          _ShuffleButton(streamProvider: streamProvider),
                           _ControlButton(
                             icon: HugeIcons.strokeRoundedPrevious,
                             onPressed: streamProvider.previous,
@@ -141,22 +181,7 @@ class StreamPlayerSheet extends StatelessWidget {
                             onPressed: streamProvider.next,
                             size: 28,
                           ),
-                          IconButton(
-                            icon: Icon(
-                              Icons.playlist_add_rounded,
-                              color: Colors.white.withValues(alpha: 0.85),
-                              size: 28,
-                            ),
-                            onPressed: () {
-                              showModalBottomSheet(
-                                context: context,
-                                isScrollControlled: true,
-                                backgroundColor: Colors.transparent,
-                                builder: (_) => AddToPlaylistSheet(song: song),
-                              );
-                            },
-                            padding: const EdgeInsets.all(12),
-                          ),
+                          _RepeatButton(streamProvider: streamProvider),
                         ],
                       ),
                       const SizedBox(height: 40),
@@ -202,9 +227,10 @@ class _AlbumArtState extends State<_AlbumArt>
       duration: const Duration(milliseconds: 300),
       value: widget.isPlaying ? 1.0 : 0.0,
     );
-    _scale = Tween<double>(begin: 0.88, end: 1.0).animate(
-      CurvedAnimation(parent: _ctrl, curve: Curves.easeInOut),
-    );
+    _scale = Tween<double>(
+      begin: 0.88,
+      end: 1.0,
+    ).animate(CurvedAnimation(parent: _ctrl, curve: Curves.easeInOut));
   }
 
   @override
@@ -252,7 +278,7 @@ class _AlbumArtState extends State<_AlbumArt>
                   ? Image.network(
                       widget.thumbUrl!,
                       fit: BoxFit.cover,
-                      errorBuilder: (_, __, ___) => _ArtPlaceholder(),
+                      errorBuilder: (_, _, _) => _ArtPlaceholder(),
                     )
                   : _ArtPlaceholder(),
 
@@ -373,6 +399,58 @@ class _PlayPauseButton extends StatelessWidget {
                 ),
         ),
       ),
+    );
+  }
+}
+
+class _ShuffleButton extends StatelessWidget {
+  final MusicStreamProvider streamProvider;
+  const _ShuffleButton({required this.streamProvider});
+
+  @override
+  Widget build(BuildContext context) {
+    return IconButton(
+      icon: HugeIcon(
+        icon: HugeIcons.strokeRoundedShuffle,
+        color: streamProvider.shuffle
+            ? const Color(0xFF6C63FF)
+            : Colors.white.withValues(alpha: 0.5),
+        size: 24,
+      ),
+      onPressed: streamProvider.toggleShuffle,
+      padding: const EdgeInsets.all(12),
+    );
+  }
+}
+
+class _RepeatButton extends StatelessWidget {
+  final MusicStreamProvider streamProvider;
+  const _RepeatButton({required this.streamProvider});
+
+  @override
+  Widget build(BuildContext context) {
+    IconData icon;
+    Color color;
+
+    switch (streamProvider.repeatMode) {
+      case RepeatMode.none:
+        icon = Icons.repeat_rounded;
+        color = Colors.white.withValues(alpha: 0.5);
+        break;
+      case RepeatMode.all:
+        icon = Icons.repeat_rounded;
+        color = const Color(0xFF6C63FF);
+        break;
+      case RepeatMode.one:
+        icon = Icons.repeat_one_rounded;
+        color = const Color(0xFF6C63FF);
+        break;
+    }
+
+    return IconButton(
+      icon: Icon(icon, color: color, size: 24),
+      onPressed: streamProvider.toggleRepeatMode,
+      padding: const EdgeInsets.all(12),
     );
   }
 }

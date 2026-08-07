@@ -53,6 +53,15 @@ class AudioProvider extends ChangeNotifier {
       notifyListeners();
     });
 
+    _service.playbackEventStream.listen(
+      (event) {},
+      onError: (Object e, StackTrace st) {
+        if (e is PlayerException) {
+          _service.seekToNext();
+        }
+      },
+    );
+
     _service.sequenceStateStream.listen((sequenceState) {
       if (sequenceState == null) return;
 
@@ -66,13 +75,12 @@ class AudioProvider extends ChangeNotifier {
       for (var source in effectiveSequence) {
         if (source.tag is MediaItem) {
           final tag = source.tag as MediaItem;
-          final song = baseQueue.firstWhere(
-            (s) => s.id == tag.id,
-            orElse: () => baseQueue.first,
-          );
-          newQueue.add(song);
+          final song = baseQueue.where((s) => s.id == tag.id).firstOrNull;
+          if (song != null) newQueue.add(song);
         }
       }
+      
+      if (newQueue.isEmpty) return;
 
       // Find current index in the effective sequence
       final currentSource = sequenceState.currentSource;

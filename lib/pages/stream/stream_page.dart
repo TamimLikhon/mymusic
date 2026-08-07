@@ -2,13 +2,14 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:hugeicons/hugeicons.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_typography.dart';
 import '../../providers/stream_provider.dart';
 import '../../providers/playlist_provider.dart';
 import 'create_playlist_page.dart';
 import 'playlist_detail_sheet.dart';
-import '../../widgets/stream_mini_player.dart';
+import '../../widgets/add_to_playlist_sheet.dart';
 import '../../widgets/animated_bars.dart';
 
 class StreamPage extends StatefulWidget {
@@ -20,11 +21,43 @@ class StreamPage extends StatefulWidget {
 
 class _StreamPageState extends State<StreamPage> {
   final TextEditingController _searchController = TextEditingController();
+  final FocusNode _searchFocus = FocusNode();
   Timer? _debounce;
+  List<String> _recentSearches = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _loadRecentSearches();
+    _searchFocus.addListener(() {
+      setState(() {});
+    });
+  }
+
+  Future<void> _loadRecentSearches() async {
+    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      _recentSearches = prefs.getStringList('recent_searches') ?? [];
+    });
+  }
+
+  Future<void> _saveRecentSearch(String query) async {
+    final q = query.trim();
+    if (q.isEmpty) return;
+    final prefs = await SharedPreferences.getInstance();
+    _recentSearches.remove(q);
+    _recentSearches.insert(0, q);
+    if (_recentSearches.length > 10) {
+      _recentSearches = _recentSearches.sublist(0, 10);
+    }
+    await prefs.setStringList('recent_searches', _recentSearches);
+    setState(() {});
+  }
 
   @override
   void dispose() {
     _searchController.dispose();
+    _searchFocus.dispose();
     _debounce?.cancel();
     super.dispose();
   }
@@ -36,6 +69,15 @@ class _StreamPageState extends State<StreamPage> {
         context.read<MusicStreamProvider>().search(query);
       }
     });
+  }
+
+  void _submitSearch(String query) {
+    if (query.trim().isNotEmpty) {
+      _saveRecentSearch(query);
+      _searchController.text = query;
+      _searchFocus.unfocus();
+      context.read<MusicStreamProvider>().search(query);
+    }
   }
 
   @override
@@ -52,10 +94,7 @@ class _StreamPageState extends State<StreamPage> {
               padding: const EdgeInsets.fromLTRB(16, 20, 16, 16),
               decoration: BoxDecoration(
                 gradient: LinearGradient(
-                  colors: [
-                    const Color(0xFF1A1A2E),
-                    AppColors.background,
-                  ],
+                  colors: [const Color(0xFF1A1A2E), AppColors.background],
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
                 ),
@@ -105,7 +144,9 @@ class _StreamPageState extends State<StreamPage> {
                   const SizedBox(height: 16),
                   TextField(
                     controller: _searchController,
+                    focusNode: _searchFocus,
                     onChanged: _onSearchChanged,
+                    onSubmitted: _submitSearch,
                     style: AppTypography.bodyMedium,
                     decoration: InputDecoration(
                       hintText: 'Search YouTube Music…',
@@ -155,6 +196,48 @@ class _StreamPageState extends State<StreamPage> {
               ),
             ),
 
+            // ── Recent Searches (when focused and empty) ────────────────────
+            if (_searchFocus.hasFocus &&
+                _searchController.text.trim().isEmpty &&
+                _recentSearches.isNotEmpty)
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 8,
+                ),
+                color: AppColors.background,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Recent Searches',
+                      style: AppTypography.label.copyWith(
+                        color: AppColors.textSecondary,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: _recentSearches
+                          .map(
+                            (query) => ActionChip(
+                              label: Text(query, style: AppTypography.caption),
+                              backgroundColor: AppColors.surface,
+                              side: BorderSide(color: AppColors.surfaceBorder),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(16),
+                              ),
+                              onPressed: () => _submitSearch(query),
+                            ),
+                          )
+                          .toList(),
+                    ),
+                  ],
+                ),
+              ),
+
             // ── Results / Home ─────────────────────────────────────────────
             Expanded(
               child: streamProvider.error != null
@@ -163,15 +246,18 @@ class _StreamPageState extends State<StreamPage> {
                       onRetry: () =>
                           streamProvider.search(_searchController.text),
                     )
-                  : _searchController.text.trim().isEmpty && streamProvider.results.isEmpty && !streamProvider.isSearching
+                  : _searchController.text.trim().isEmpty &&
+                        streamProvider.results.isEmpty &&
+                        !streamProvider.isSearching
                   ? const _StreamHomeView()
-                  : streamProvider.results.isEmpty && !streamProvider.isSearching
-                      ? const _EmptyView()
-                      : _ResultsList(streamProvider: streamProvider),
+                  : streamProvider.results.isEmpty &&
+                        !streamProvider.isSearching
+                  ? const _EmptyView()
+                  : _ResultsList(
+                      streamProvider: streamProvider,
+                      onSaveSearch: _saveRecentSearch,
+                    ),
             ),
-
-            // ── Mini Player ────────────────────────────────────────────────
-            const StreamMiniPlayer(),
           ],
         ),
       ),
@@ -183,7 +269,11 @@ class _StreamPageState extends State<StreamPage> {
 
 class _ResultsList extends StatelessWidget {
   final MusicStreamProvider streamProvider;
-  const _ResultsList({required this.streamProvider});
+  final void Function(String query) onSaveSearch;
+  const _ResultsList({
+    required this.streamProvider,
+    required this.onSaveSearch,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -200,7 +290,102 @@ class _ResultsList extends StatelessWidget {
           child: Material(
             color: Colors.transparent,
             child: InkWell(
-              onTap: () => streamProvider.playSong(song, index),
+              onTap: () {
+                onSaveSearch(song.title);
+                streamProvider.playSong(song, index);
+              },
+              onLongPress: () {
+                showModalBottomSheet(
+                  context: context,
+                  backgroundColor: AppColors.surfaceHigh,
+                  shape: const RoundedRectangleBorder(
+                    borderRadius: BorderRadius.vertical(
+                      top: Radius.circular(20),
+                    ),
+                  ),
+                  builder: (context) => Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const SizedBox(height: 12),
+                      Container(
+                        width: 36,
+                        height: 4,
+                        decoration: BoxDecoration(
+                          color: AppColors.surfaceBorder,
+                          borderRadius: BorderRadius.circular(2),
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      ListTile(
+                        leading: const Icon(
+                          Icons.play_circle_fill_rounded,
+                          color: AppColors.textPrimary,
+                        ),
+                        title: Text(
+                          'Play Now',
+                          style: AppTypography.bodyMedium,
+                        ),
+                        onTap: () {
+                          streamProvider.playSong(song, index);
+                          Navigator.pop(context);
+                        },
+                      ),
+                      ListTile(
+                        leading: const Icon(
+                          Icons.playlist_play_rounded,
+                          color: AppColors.textPrimary,
+                        ),
+                        title: Text(
+                          'Play Next',
+                          style: AppTypography.bodyMedium,
+                        ),
+                        onTap: () {
+                          streamProvider.addToQueue(song);
+                          streamProvider.reorderQueue(
+                            streamProvider.queue.length - 1,
+                            streamProvider.queueIndex + 1,
+                          );
+                          Navigator.pop(context);
+                        },
+                      ),
+                      ListTile(
+                        leading: const Icon(
+                          Icons.queue_music_rounded,
+                          color: AppColors.textPrimary,
+                        ),
+                        title: Text(
+                          'Add to Queue',
+                          style: AppTypography.bodyMedium,
+                        ),
+                        onTap: () {
+                          streamProvider.addToQueue(song);
+                          Navigator.pop(context);
+                        },
+                      ),
+                      ListTile(
+                        leading: const Icon(
+                          Icons.playlist_add_rounded,
+                          color: AppColors.textPrimary,
+                        ),
+                        title: Text(
+                          'Add to Playlist',
+                          style: AppTypography.bodyMedium,
+                        ),
+                        onTap: () {
+                          Navigator.pop(context);
+                          showModalBottomSheet(
+                            context: context,
+                            isScrollControlled: true,
+                            backgroundColor: Colors.transparent,
+                            builder: (_) => AddToPlaylistSheet(song: song),
+                          );
+                        },
+                      ),
+                      const SizedBox(height: 12),
+                    ],
+                  ),
+                );
+              },
               splashColor: const Color(0xFF6C63FF).withValues(alpha: 0.1),
               highlightColor: const Color(0xFF6C63FF).withValues(alpha: 0.05),
               child: AnimatedContainer(
@@ -237,7 +422,7 @@ class _ResultsList extends StatelessWidget {
                                     width: 52,
                                     height: 52,
                                     fit: BoxFit.cover,
-                                    errorBuilder: (_, __, ___) =>
+                                    errorBuilder: (_, _, _) =>
                                         _Placeholder(size: 52),
                                   )
                                 : _Placeholder(size: 52),
@@ -299,7 +484,30 @@ class _ResultsList extends StatelessWidget {
                           ],
                         ),
                       ),
-                      const SizedBox(width: 8),
+                      const SizedBox(width: 4),
+
+                      // Add to Playlist button
+                      IconButton(
+                        icon: const Icon(
+                          Icons.playlist_add_rounded,
+                          color: AppColors.textSecondary,
+                          size: 22,
+                        ),
+                        onPressed: () {
+                          showModalBottomSheet(
+                            context: context,
+                            isScrollControlled: true,
+                            backgroundColor: Colors.transparent,
+                            builder: (_) => AddToPlaylistSheet(song: song),
+                          );
+                        },
+                        constraints: const BoxConstraints(
+                          minWidth: 36,
+                          minHeight: 36,
+                        ),
+                        padding: EdgeInsets.zero,
+                      ),
+                      const SizedBox(width: 4),
 
                       // Duration badge
                       Container(
@@ -405,10 +613,7 @@ class _EmptyView extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 8),
-          Text(
-            'Powered by YouTube Music',
-            style: AppTypography.caption,
-          ),
+          Text('Powered by YouTube Music', style: AppTypography.caption),
         ],
       ),
     );
@@ -521,7 +726,8 @@ class _StreamHomeView extends StatelessWidget {
                 itemBuilder: (context, index) {
                   final song = history[index];
                   return GestureDetector(
-                    onTap: () => context.read<MusicStreamProvider>().playSong(song, -1),
+                    onTap: () =>
+                        context.read<MusicStreamProvider>().playSong(song, -1),
                     child: Container(
                       width: 100,
                       margin: const EdgeInsets.symmetric(horizontal: 6),
@@ -536,7 +742,8 @@ class _StreamHomeView extends StatelessWidget {
                                     width: 100,
                                     height: 100,
                                     fit: BoxFit.cover,
-                                    errorBuilder: (_, __, ___) => _Placeholder(size: 100),
+                                    errorBuilder: (_, _, _) =>
+                                        _Placeholder(size: 100),
                                   )
                                 : _Placeholder(size: 100),
                           ),
@@ -578,97 +785,102 @@ class _StreamHomeView extends StatelessWidget {
                 crossAxisSpacing: 16,
                 childAspectRatio: 0.85,
               ),
-              delegate: SliverChildBuilderDelegate(
-                (context, index) {
-                  final playlist = playlists[index];
-                  return GestureDetector(
-                    onTap: () {
-                      showModalBottomSheet(
-                        context: context,
-                        isScrollControlled: true,
-                        backgroundColor: Colors.transparent,
-                        builder: (_) => PlaylistDetailSheet(playlist: playlist),
-                      );
-                    },
-                    child: Container(
-                      decoration: BoxDecoration(
-                        color: AppColors.surface,
-                        borderRadius: BorderRadius.circular(16),
-                        border: Border.all(color: AppColors.surfaceBorder),
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          Expanded(
-                            child: ClipRRect(
-                              borderRadius: const BorderRadius.vertical(top: Radius.circular(15)),
-                              child: playlist.thumbnailUrl != null
-                                  ? Image.network(
-                                      playlist.thumbnailUrl!,
-                                      fit: BoxFit.cover,
-                                      errorBuilder: (_, __, ___) => Container(
-                                        decoration: BoxDecoration(
-                                          gradient: LinearGradient(
-                                            colors: AppColors.seedGradient(playlist.name),
-                                            begin: Alignment.topLeft,
-                                            end: Alignment.bottomRight,
-                                          ),
-                                        ),
-                                        child: const Center(
-                                          child: HugeIcon(
-                                            icon: HugeIcons.strokeRoundedMusicNote01,
-                                            color: Colors.white70,
-                                            size: 32,
-                                          ),
-                                        ),
-                                      ),
-                                    )
-                                  : Container(
+              delegate: SliverChildBuilderDelegate((context, index) {
+                final playlist = playlists[index];
+                return GestureDetector(
+                  onTap: () {
+                    showModalBottomSheet(
+                      context: context,
+                      isScrollControlled: true,
+                      backgroundColor: Colors.transparent,
+                      builder: (_) => PlaylistDetailSheet(playlist: playlist),
+                    );
+                  },
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: AppColors.surface,
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: AppColors.surfaceBorder),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        Expanded(
+                          child: ClipRRect(
+                            borderRadius: const BorderRadius.vertical(
+                              top: Radius.circular(15),
+                            ),
+                            child: playlist.thumbnailUrl != null
+                                ? Image.network(
+                                    playlist.thumbnailUrl!,
+                                    fit: BoxFit.cover,
+                                    errorBuilder: (_, _, _) => Container(
                                       decoration: BoxDecoration(
                                         gradient: LinearGradient(
-                                          colors: AppColors.seedGradient(playlist.name),
+                                          colors: AppColors.seedGradient(
+                                            playlist.name,
+                                          ),
                                           begin: Alignment.topLeft,
                                           end: Alignment.bottomRight,
                                         ),
                                       ),
                                       child: const Center(
                                         child: HugeIcon(
-                                          icon: HugeIcons.strokeRoundedMusicNote01,
+                                          icon: HugeIcons
+                                              .strokeRoundedMusicNote01,
                                           color: Colors.white70,
                                           size: 32,
                                         ),
                                       ),
                                     ),
-                            ),
-                          ),
-                          Padding(
-                            padding: const EdgeInsets.all(12),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  playlist.name,
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: AppTypography.bodyMedium.copyWith(
-                                    fontWeight: FontWeight.w600,
+                                  )
+                                : Container(
+                                    decoration: BoxDecoration(
+                                      gradient: LinearGradient(
+                                        colors: AppColors.seedGradient(
+                                          playlist.name,
+                                        ),
+                                        begin: Alignment.topLeft,
+                                        end: Alignment.bottomRight,
+                                      ),
+                                    ),
+                                    child: const Center(
+                                      child: HugeIcon(
+                                        icon:
+                                            HugeIcons.strokeRoundedMusicNote01,
+                                        color: Colors.white70,
+                                        size: 32,
+                                      ),
+                                    ),
                                   ),
-                                ),
-                                const SizedBox(height: 2),
-                                Text(
-                                  '${playlist.songs.length} song${playlist.songs.length == 1 ? '' : 's'}',
-                                  style: AppTypography.caption,
-                                ),
-                              ],
-                            ),
                           ),
-                        ],
-                      ),
+                        ),
+                        Padding(
+                          padding: const EdgeInsets.all(12),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                playlist.name,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: AppTypography.bodyMedium.copyWith(
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                              const SizedBox(height: 2),
+                              Text(
+                                '${playlist.songs.length} song${playlist.songs.length == 1 ? '' : 's'}',
+                                style: AppTypography.caption,
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
                     ),
-                  );
-                },
-                childCount: playlists.length,
-              ),
+                  ),
+                );
+              }, childCount: playlists.length),
             ),
           ),
         ],
@@ -677,4 +889,3 @@ class _StreamHomeView extends StatelessWidget {
     );
   }
 }
-

@@ -16,11 +16,12 @@ void main() async {
   await JustAudioBackground.init(
     androidNotificationChannelId: 'com.mymusic.audio',
     androidNotificationChannelName: 'MyMusic Playback',
-    androidNotificationOngoing: true,
+    androidNotificationOngoing: false,
     androidStopForegroundOnPause: true,
   );
 
   final database = AppDatabase();
+  final audioProvider = AudioProvider(database);
   final playlistProvider = PlaylistProvider();
   final streamProvider = MusicStreamProvider();
   streamProvider.playlistProvider = playlistProvider;
@@ -31,11 +32,11 @@ void main() async {
         Provider<AppDatabase>.value(value: database),
         ChangeNotifierProvider(create: (_) => SongProvider(database)),
         ChangeNotifierProvider(create: (_) => TagProvider(database)),
-        ChangeNotifierProvider(create: (_) => AudioProvider(database)),
+        ChangeNotifierProvider.value(value: audioProvider),
         ChangeNotifierProvider.value(value: streamProvider),
         ChangeNotifierProvider.value(value: playlistProvider),
       ],
-      child: const MyMusicApp(),
+      child: MyMusicApp(audioProvider: audioProvider),
     ),
   );
 }

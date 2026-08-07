@@ -6,6 +6,7 @@ import '../data/database/app_database.dart';
 class AudioPlayerService {
   late AudioPlayer _player;
   bool _isInitialized = false;
+  bool _wasPlayingBeforeInterruption = false;
 
   AudioPlayer get player => _player;
 
@@ -19,6 +20,7 @@ class AudioPlayerService {
     // Handle interruptions
     session.interruptionEventStream.listen((event) {
       if (event.begin) {
+        _wasPlayingBeforeInterruption = _player.playing;
         switch (event.type) {
           case AudioInterruptionType.duck:
             _player.setVolume(0.3);
@@ -34,7 +36,7 @@ class AudioPlayerService {
             _player.setVolume(1.0);
             break;
           case AudioInterruptionType.pause:
-            _player.play();
+            if (_wasPlayingBeforeInterruption) _player.play();
             break;
           case AudioInterruptionType.unknown:
             break;
@@ -90,10 +92,15 @@ class AudioPlayerService {
   Future<void> seekToPrevious() => _player.seekToPrevious();
   Future<void> setVolume(double volume) => _player.setVolume(volume);
   Future<void> setLoopMode(LoopMode mode) => _player.setLoopMode(mode);
-  Future<void> setShuffleModeEnabled(bool enabled) =>
-      _player.setShuffleModeEnabled(enabled);
+  Future<void> setShuffleModeEnabled(bool enabled) async {
+    await _player.setShuffleModeEnabled(enabled);
+    if (enabled) {
+      await _player.shuffle();
+    }
+  }
 
   Stream<PlayerState> get playerStateStream => _player.playerStateStream;
+  Stream<PlaybackEvent> get playbackEventStream => _player.playbackEventStream;
   Stream<Duration?> get durationStream => _player.durationStream;
   Stream<Duration> get positionStream => _player.positionStream;
   Stream<int?> get currentIndexStream => _player.currentIndexStream;

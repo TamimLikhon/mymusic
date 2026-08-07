@@ -27,7 +27,10 @@ class _AddToPlaylistSheetState extends State<AddToPlaylistSheet> {
     if (_loading.contains(playlistId)) return;
     setState(() => _loading.add(playlistId));
 
-    final alreadyIn = provider.songIsInPlaylist(playlistId, widget.song.videoId);
+    final alreadyIn = provider.songIsInPlaylist(
+      playlistId,
+      widget.song.videoId,
+    );
     if (alreadyIn) {
       await provider.removeSongFromPlaylist(playlistId, widget.song.videoId);
     } else {
@@ -50,8 +53,9 @@ class _AddToPlaylistSheetState extends State<AddToPlaylistSheet> {
             return Container(
               decoration: BoxDecoration(
                 color: AppColors.surfaceHigh,
-                borderRadius:
-                    const BorderRadius.vertical(top: Radius.circular(28)),
+                borderRadius: const BorderRadius.vertical(
+                  top: Radius.circular(28),
+                ),
                 border: Border.all(color: AppColors.surfaceBorder),
               ),
               child: Column(
@@ -82,7 +86,7 @@ class _AddToPlaylistSheetState extends State<AddToPlaylistSheet> {
                               width: 44,
                               height: 44,
                               fit: BoxFit.cover,
-                              errorBuilder: (_, __, ___) =>
+                              errorBuilder: (_, _, _) =>
                                   _ThumbnailPlaceholder(size: 44),
                             ),
                           )
@@ -131,7 +135,9 @@ class _AddToPlaylistSheetState extends State<AddToPlaylistSheet> {
                     },
                     child: Padding(
                       padding: const EdgeInsets.symmetric(
-                          horizontal: 20, vertical: 14),
+                        horizontal: 20,
+                        vertical: 14,
+                      ),
                       child: Row(
                         children: [
                           Container(
@@ -174,16 +180,16 @@ class _AddToPlaylistSheetState extends State<AddToPlaylistSheet> {
                             itemBuilder: (context, i) {
                               final playlist = provider.playlists[i];
                               final inPlaylist = provider.songIsInPlaylist(
-                                  playlist.id, widget.song.videoId);
-                              final isLoading =
-                                  _loading.contains(playlist.id);
+                                playlist.id,
+                                widget.song.videoId,
+                              );
+                              final isLoading = _loading.contains(playlist.id);
 
                               return _PlaylistRow(
                                 playlist: playlist,
                                 inPlaylist: inPlaylist,
                                 isLoading: isLoading,
-                                onTap: () =>
-                                    _toggle(provider, playlist.id),
+                                onTap: () => _toggle(provider, playlist.id),
                               );
                             },
                           ),
@@ -230,7 +236,7 @@ class _PlaylistRow extends StatelessWidget {
                       width: 48,
                       height: 48,
                       fit: BoxFit.cover,
-                      errorBuilder: (_, __, ___) =>
+                      errorBuilder: (_, _, _) =>
                           _GradientThumb(name: playlist.name),
                     )
                   : _GradientThumb(name: playlist.name),

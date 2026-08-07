@@ -12,19 +12,37 @@ import 'pages/settings/settings_page.dart';
 import 'pages/about/about_page.dart';
 import 'pages/search/search_page.dart';
 import 'pages/stream/stream_page.dart';
+import 'providers/audio_provider.dart';
+import 'widgets/stream_mini_player.dart';
 
 class MyMusicApp extends StatefulWidget {
-  const MyMusicApp({super.key});
+  final AudioProvider audioProvider;
+  
+  const MyMusicApp({super.key, required this.audioProvider});
 
   @override
   State<MyMusicApp> createState() => _MyMusicAppState();
 }
 
-class _MyMusicAppState extends State<MyMusicApp> {
+class _MyMusicAppState extends State<MyMusicApp> with WidgetsBindingObserver {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _requestPermissions();
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.detached) {
+      widget.audioProvider.stop();
+    }
   }
 
   Future<void> _requestPermissions() async {
@@ -112,6 +130,7 @@ class _AppShellState extends State<_AppShell>
       bottomNavigationBar: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
+          const StreamMiniPlayer(),
           const MiniPlayer(),
           _SpotifyBottomNav(currentIndex: _tab.index, onTap: _onTabChanged),
         ],

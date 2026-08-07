@@ -34,7 +34,9 @@ class PlaylistDetailSheet extends StatelessWidget {
           expand: false,
           builder: (context, scrollController) {
             return ClipRRect(
-              borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+              borderRadius: const BorderRadius.vertical(
+                top: Radius.circular(28),
+              ),
               child: Stack(
                 children: [
                   // Blurred background from thumbnail
@@ -43,7 +45,7 @@ class PlaylistDetailSheet extends StatelessWidget {
                       child: Image.network(
                         fresh.thumbnailUrl!,
                         fit: BoxFit.cover,
-                        errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+                        errorBuilder: (_, _, _) => const SizedBox.shrink(),
                       ),
                     ),
                   Positioned.fill(
@@ -84,12 +86,12 @@ class PlaylistDetailSheet extends StatelessWidget {
                                       width: 64,
                                       height: 64,
                                       fit: BoxFit.cover,
-                                      errorBuilder: (_, __, ___) =>
-                                          _GradientCover(
-                                              name: fresh.name, size: 64),
+                                      errorBuilder: (_, _, _) => _GradientCover(
+                                        name: fresh.name,
+                                        size: 64,
+                                      ),
                                     )
-                                  : _GradientCover(
-                                      name: fresh.name, size: 64),
+                                  : _GradientCover(name: fresh.name, size: 64),
                             ),
                             const SizedBox(width: 14),
                             Expanded(
@@ -123,14 +125,19 @@ class PlaylistDetailSheet extends StatelessWidget {
                                 size: 22,
                               ),
                               onPressed: () => _confirmDelete(
-                                  context, playlistProvider, fresh.id),
+                                context,
+                                playlistProvider,
+                                fresh.id,
+                              ),
                             ),
                           ],
                         ),
                       ),
                       const SizedBox(height: 16),
                       Divider(
-                          color: Colors.white.withValues(alpha: 0.1), height: 1),
+                        color: Colors.white.withValues(alpha: 0.1),
+                        height: 1,
+                      ),
 
                       // Song list
                       Expanded(
@@ -143,15 +150,17 @@ class PlaylistDetailSheet extends StatelessWidget {
                                   final song = fresh.songs[i];
                                   final isCurrent =
                                       streamProvider.currentSong?.videoId ==
-                                          song.videoId;
+                                      song.videoId;
                                   return _SongRow(
                                     song: song,
                                     isCurrent: isCurrent,
                                     onTap: () =>
                                         streamProvider.playSong(song, -1),
-                                    onRemove: () => playlistProvider
-                                        .removeSongFromPlaylist(
-                                            fresh.id, song.videoId),
+                                    onRemove: () =>
+                                        playlistProvider.removeSongFromPlaylist(
+                                          fresh.id,
+                                          song.videoId,
+                                        ),
                                   );
                                 },
                               ),
@@ -168,24 +177,32 @@ class PlaylistDetailSheet extends StatelessWidget {
   }
 
   void _confirmDelete(
-      BuildContext context, PlaylistProvider provider, String id) {
+    BuildContext context,
+    PlaylistProvider provider,
+    String id,
+  ) {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
         backgroundColor: AppColors.surfaceHigh,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: Text('Delete Playlist?',
-            style: AppTypography.heading.copyWith(fontSize: 18)),
+        title: Text(
+          'Delete Playlist?',
+          style: AppTypography.heading.copyWith(fontSize: 18),
+        ),
         content: Text(
           'This will permanently delete this playlist.',
           style: AppTypography.bodyMedium.copyWith(
-              color: AppColors.textSecondary),
+            color: AppColors.textSecondary,
+          ),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('Cancel',
-                style: TextStyle(color: AppColors.textSecondary)),
+            child: const Text(
+              'Cancel',
+              style: TextStyle(color: AppColors.textSecondary),
+            ),
           ),
           TextButton(
             onPressed: () {
@@ -193,8 +210,10 @@ class PlaylistDetailSheet extends StatelessWidget {
               Navigator.pop(ctx);
               Navigator.pop(context);
             },
-            child: const Text('Delete',
-                style: TextStyle(color: AppColors.secondary)),
+            child: const Text(
+              'Delete',
+              style: TextStyle(color: AppColors.secondary),
+            ),
           ),
         ],
       ),
@@ -227,7 +246,8 @@ class _SongRow extends StatelessWidget {
               : Colors.transparent,
           border: isCurrent
               ? const Border(
-                  left: BorderSide(color: AppColors.primary, width: 3))
+                  left: BorderSide(color: AppColors.primary, width: 3),
+                )
               : null,
         ),
         child: Padding(
@@ -242,7 +262,7 @@ class _SongRow extends StatelessWidget {
                         width: 44,
                         height: 44,
                         fit: BoxFit.cover,
-                        errorBuilder: (_, __, ___) => _miniPlaceholder(),
+                        errorBuilder: (_, _, _) => _miniPlaceholder(),
                       )
                     : _miniPlaceholder(),
               ),
@@ -268,17 +288,20 @@ class _SongRow extends StatelessWidget {
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: AppTypography.caption.copyWith(
-                          color: Colors.white54),
+                        color: Colors.white54,
+                      ),
                     ),
                   ],
                 ),
               ),
               IconButton(
-                icon: const Icon(Icons.remove_circle_outline_rounded,
-                    color: Colors.white30, size: 20),
+                icon: const Icon(
+                  Icons.remove_circle_outline_rounded,
+                  color: Colors.white30,
+                  size: 20,
+                ),
                 onPressed: onRemove,
-                constraints:
-                    const BoxConstraints(minWidth: 36, minHeight: 36),
+                constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
                 padding: EdgeInsets.zero,
               ),
             ],
@@ -289,15 +312,18 @@ class _SongRow extends StatelessWidget {
   }
 
   Widget _miniPlaceholder() => Container(
-        width: 44,
-        height: 44,
-        decoration: BoxDecoration(
-          color: AppColors.surface,
-          borderRadius: BorderRadius.circular(8),
-        ),
-        child: const Icon(Icons.music_note,
-            color: AppColors.textSecondary, size: 20),
-      );
+    width: 44,
+    height: 44,
+    decoration: BoxDecoration(
+      color: AppColors.surface,
+      borderRadius: BorderRadius.circular(8),
+    ),
+    child: const Icon(
+      Icons.music_note,
+      color: AppColors.textSecondary,
+      size: 20,
+    ),
+  );
 }
 
 class _GradientCover extends StatelessWidget {
@@ -336,19 +362,20 @@ class _EmptyState extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const Icon(Icons.queue_music_rounded,
-              color: Colors.white24, size: 52),
+          const Icon(
+            Icons.queue_music_rounded,
+            color: Colors.white24,
+            size: 52,
+          ),
           const SizedBox(height: 16),
           Text(
             'No songs yet',
-            style: AppTypography.bodyMedium
-                .copyWith(color: Colors.white38),
+            style: AppTypography.bodyMedium.copyWith(color: Colors.white38),
           ),
           const SizedBox(height: 6),
           Text(
             'Play a song and use the ⊕ button\nto add it here',
-            style: AppTypography.caption
-                .copyWith(color: Colors.white24),
+            style: AppTypography.caption.copyWith(color: Colors.white24),
             textAlign: TextAlign.center,
           ),
         ],
