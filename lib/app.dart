@@ -12,7 +12,9 @@ import 'pages/settings/settings_page.dart';
 import 'pages/about/about_page.dart';
 import 'pages/search/search_page.dart';
 import 'pages/stream/stream_page.dart';
+import 'package:provider/provider.dart';
 import 'providers/audio_provider.dart';
+import 'providers/stream_provider.dart';
 import 'widgets/stream_mini_player.dart';
 
 class MyMusicApp extends StatefulWidget {
@@ -130,8 +132,19 @@ class _AppShellState extends State<_AppShell>
       bottomNavigationBar: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const StreamMiniPlayer(),
-          const MiniPlayer(),
+          // Show only one mini player at a time.
+          // Stream takes priority; local mini player hides while stream is active.
+          Consumer2<MusicStreamProvider, AudioProvider>(
+            builder: (context, stream, audio, _) {
+              if (stream.hasSong) {
+                return const StreamMiniPlayer();
+              }
+              if (audio.currentSong != null) {
+                return const MiniPlayer();
+              }
+              return const SizedBox.shrink();
+            },
+          ),
           _SpotifyBottomNav(currentIndex: _tab.index, onTap: _onTabChanged),
         ],
       ),

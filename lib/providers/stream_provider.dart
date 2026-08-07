@@ -5,6 +5,7 @@ import 'package:just_audio_background/just_audio_background.dart';
 import 'package:audio_session/audio_session.dart';
 import 'package:yt_flutter_musicapi/yt_flutter_musicapi.dart';
 import '../data/models/stream_song.dart';
+import '../services/unified_audio_service.dart';
 import 'playlist_provider.dart';
 
 enum RepeatMode { none, one, all }
@@ -12,14 +13,16 @@ enum RepeatMode { none, one, all }
 class MusicStreamProvider extends ChangeNotifier {
   PlaylistProvider? playlistProvider;
   final _api = YtFlutterMusicapi();
-  final AudioPlayer _player = AudioPlayer();
+
+  // Use the app-wide shared player — never create a second one.
+  AudioPlayer get _player => UnifiedAudioService.instance.player;
 
   bool _isInitialized = false;
   bool _isSearching = false;
   bool _isBuffering = false;
   String? _error;
   final List<StreamSong> _results = [];
-  
+
   // Queue Management
   final List<StreamSong> _queue = [];
   int _queueIndex = -1;
@@ -52,6 +55,8 @@ class MusicStreamProvider extends ChangeNotifier {
 
   int _searchId = 0;
 
+  /// [UnifiedAudioService.initialize] must be awaited before this constructor
+  /// runs (see main.dart). The player is guaranteed to exist at this point.
   MusicStreamProvider() {
     _initPlayerListeners();
   }
@@ -59,6 +64,12 @@ class MusicStreamProvider extends ChangeNotifier {
   void _initPlayerListeners() {
     _player.playerStateStream.listen((state) {
       _isPlaying = state.playing;
+
+      // Keep _isBuffering in sync with the actual player processing state.
+      // This handles network stalls, initial buffering, and source switches.
+      _isBuffering = state.processingState == ProcessingState.loading ||
+          state.processingState == ProcessingState.buffering;
+
       if (state.processingState == ProcessingState.completed) {
         next();
       }
@@ -108,7 +119,7 @@ class MusicStreamProvider extends ChangeNotifier {
         }
       }
     }
-    
+
     _error = "Playback error occurred. URL may have expired.";
     _isBuffering = false;
     notifyListeners();
@@ -118,27 +129,23 @@ class MusicStreamProvider extends ChangeNotifier {
   Future<void> _refreshAndPlay(StreamSong song, int index) async {
     _isBuffering = true;
     notifyListeners();
-    
+
     await _ensureInitialized();
     try {
-      // In a real scenario, you might have a method like _api.fetchSongDetails(videoId).
-      // Since yt_flutter_musicapi might not expose a direct "fetch by id" method returning the full audio URL directly,
-      // we can do a targeted search or rely on its specific methods.
-      // Let's assume we do a quick search with the videoId to try to get fresh details.
-      final freshResults = await _api.streamSearchResults(query: song.videoId, limit: 1).toList();
+      final freshResults =
+          await _api.streamSearchResults(query: song.videoId, limit: 1).toList();
       if (freshResults.isNotEmpty) {
-         final freshSong = StreamSong.fromSearchResult(freshResults.first);
-         if (freshSong.audioUrl != null) {
-            // Update the song in the queue
-            if (index >= 0 && index < _queue.length) {
-              _queue[index] = freshSong;
-              if (_currentSong?.videoId == song.videoId) {
-                _currentSong = freshSong;
-              }
+        final freshSong = StreamSong.fromSearchResult(freshResults.first);
+        if (freshSong.audioUrl != null) {
+          if (index >= 0 && index < _queue.length) {
+            _queue[index] = freshSong;
+            if (_currentSong?.videoId == song.videoId) {
+              _currentSong = freshSong;
             }
-            await playSong(freshSong, index, replaceQueue: false);
-            return;
-         }
+          }
+          await playSong(freshSong, index, replaceQueue: false);
+          return;
+        }
       }
       throw Exception("Could not refresh audio URL.");
     } catch (e) {
@@ -205,7 +212,8 @@ class MusicStreamProvider extends ChangeNotifier {
     }
   }
 
-  Future<void> playSong(StreamSong song, int index, {bool replaceQueue = true}) async {
+  Future<void> playSong(StreamSong song, int index,
+      {bool replaceQueue = true}) async {
     if (replaceQueue) {
       _queue.clear();
       _queue.addAll(_results);
@@ -221,7 +229,6 @@ class MusicStreamProvider extends ChangeNotifier {
     notifyListeners();
 
     if (song.audioUrl == null) {
-      // Attempt to refresh if URL is missing right away
       try {
         await _refreshAndPlay(song, _queueIndex);
         return;
@@ -234,6 +241,10 @@ class MusicStreamProvider extends ChangeNotifier {
     }
 
     try {
+      // Stop any currently active local or stream session on the shared player
+      // before loading the new audio source.
+      await _player.stop();
+
       await _player.setAudioSource(
         AudioSource.uri(
           Uri.parse(song.audioUrl!),
@@ -253,15 +264,12 @@ class MusicStreamProvider extends ChangeNotifier {
         print('Error playing song: $e');
       }
       if (e is PlayerException) {
-         _handlePlayerError();
+        _handlePlayerError();
       } else {
         _error = 'Error playing song: $e';
         _isBuffering = false;
         notifyListeners();
       }
-    } finally {
-      _isBuffering = false;
-      notifyListeners();
     }
   }
 
@@ -278,7 +286,7 @@ class MusicStreamProvider extends ChangeNotifier {
 
   void removeFromQueue(int index) {
     if (index < 0 || index >= _queue.length) return;
-    
+
     _queue.removeAt(index);
     if (_shuffle) {
       _shuffledIndices.remove(index);
@@ -323,7 +331,7 @@ class MusicStreamProvider extends ChangeNotifier {
       _queueIndex++;
     }
 
-    // Rebuild shuffled indices if shuffle is active (or just regenerate)
+    // Rebuild shuffled indices if shuffle is active
     if (_shuffle) {
       _generateShuffledIndices();
     }
@@ -390,11 +398,12 @@ class MusicStreamProvider extends ChangeNotifier {
     int nextIndex = -1;
     if (_shuffle) {
       int currentShuffleIndex = _shuffledIndices.indexOf(_queueIndex);
-      if (currentShuffleIndex != -1 && currentShuffleIndex + 1 < _shuffledIndices.length) {
+      if (currentShuffleIndex != -1 &&
+          currentShuffleIndex + 1 < _shuffledIndices.length) {
         nextIndex = _shuffledIndices[currentShuffleIndex + 1];
       } else {
         if (_repeatMode == RepeatMode.all || forceNext) {
-          _generateShuffledIndices(); // Reshuffle for next loop
+          _generateShuffledIndices();
           nextIndex = _shuffledIndices.first;
         } else {
           await stop();
@@ -460,7 +469,7 @@ class MusicStreamProvider extends ChangeNotifier {
   @override
   void dispose() {
     positionNotifier.dispose();
-    _player.dispose();
+    // The player is owned by UnifiedAudioService — do not dispose it here.
     super.dispose();
   }
 }

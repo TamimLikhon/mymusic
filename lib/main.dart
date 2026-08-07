@@ -7,6 +7,7 @@ import 'providers/tag_provider.dart';
 import 'providers/audio_provider.dart';
 import 'providers/stream_provider.dart';
 import 'providers/playlist_provider.dart';
+import 'services/unified_audio_service.dart';
 import 'app.dart';
 
 void main() async {
@@ -19,6 +20,11 @@ void main() async {
     androidNotificationOngoing: false,
     androidStopForegroundOnPause: true,
   );
+
+  // Create the single shared AudioPlayer first — both the local-music layer
+  // and the streaming layer will use this one instance, satisfying the
+  // just_audio_background "single player at a time" constraint.
+  await UnifiedAudioService.instance.initialize();
 
   final database = AppDatabase();
   final audioProvider = AudioProvider(database);
@@ -40,4 +46,3 @@ void main() async {
     ),
   );
 }
-

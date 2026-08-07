@@ -1,7 +1,7 @@
 name: mymusic
 description: "A retro-themed offline music player with tag-based organization."
 publish_to: "none"
-version: 1.0.0+3
+version: 1.0.0+2
 
 environment:
   sdk: ^3.11.1
@@ -10,7 +10,7 @@ dependencies:
   audio_metadata_reader: ^1.6.0
   audio_session: ^0.2.4
   drift: ^2.34.2
-  youtube_explode_dart: ^2.3.4
+  yt_flutter_musicapi: 3.4.4
   file_picker: ^8.0.0
   flutter:
     sdk: flutter
