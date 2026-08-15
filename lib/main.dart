@@ -5,15 +5,15 @@ import 'data/database/app_database.dart';
 import 'providers/song_provider.dart';
 import 'providers/tag_provider.dart';
 import 'providers/audio_provider.dart';
-import 'providers/stream_provider.dart';
-import 'providers/playlist_provider.dart';
 import 'services/unified_audio_service.dart';
+import 'services/web_audio_service.dart';
 import 'app.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Initialize just_audio_background for notification controls
+  // Initialize just_audio_background for notification controls (used by both
+  // the local music engine and the WebView's silent-audio lock screen trick).
   await JustAudioBackground.init(
     androidNotificationChannelId: 'com.mymusic.audio',
     androidNotificationChannelName: 'MyMusic Playback',
@@ -22,15 +22,13 @@ void main() async {
   );
 
   // Create the single shared AudioPlayer first — both the local-music layer
-  // and the streaming layer will use this one instance, satisfying the
-  // just_audio_background "single player at a time" constraint.
+  // and the WebView's lock screen session use this one instance, satisfying
+  // the just_audio_background "single player at a time" constraint.
   await UnifiedAudioService.instance.initialize();
 
   final database = AppDatabase();
   final audioProvider = AudioProvider(database);
-  final playlistProvider = PlaylistProvider();
-  final streamProvider = MusicStreamProvider();
-  streamProvider.playlistProvider = playlistProvider;
+  final webAudioService = WebAudioService();
 
   runApp(
     MultiProvider(
@@ -39,8 +37,7 @@ void main() async {
         ChangeNotifierProvider(create: (_) => SongProvider(database)),
         ChangeNotifierProvider(create: (_) => TagProvider(database)),
         ChangeNotifierProvider.value(value: audioProvider),
-        ChangeNotifierProvider.value(value: streamProvider),
-        ChangeNotifierProvider.value(value: playlistProvider),
+        ChangeNotifierProvider.value(value: webAudioService),
       ],
       child: MyMusicApp(audioProvider: audioProvider),
     ),

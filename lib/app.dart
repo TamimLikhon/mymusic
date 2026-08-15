@@ -11,15 +11,13 @@ import 'pages/tags/tag_detail_page.dart';
 import 'pages/settings/settings_page.dart';
 import 'pages/about/about_page.dart';
 import 'pages/search/search_page.dart';
-import 'pages/stream/stream_page.dart';
+import 'pages/stream/web_stream_page.dart';
 import 'package:provider/provider.dart';
 import 'providers/audio_provider.dart';
-import 'providers/stream_provider.dart';
-import 'widgets/stream_mini_player.dart';
 
 class MyMusicApp extends StatefulWidget {
   final AudioProvider audioProvider;
-  
+
   const MyMusicApp({super.key, required this.audioProvider});
 
   @override
@@ -82,25 +80,11 @@ class _AppShell extends StatefulWidget {
   State<_AppShell> createState() => _AppShellState();
 }
 
-class _AppShellState extends State<_AppShell>
-    with SingleTickerProviderStateMixin {
+class _AppShellState extends State<_AppShell> {
   _NavTab _tab = _NavTab.home;
 
   void _onTabChanged(int index) {
     setState(() => _tab = _NavTab.values[index]);
-  }
-
-  Widget _buildPage() {
-    switch (_tab) {
-      case _NavTab.home:
-        return VibePage(onSettingsTap: _navigateToSettings);
-      case _NavTab.stream:
-        return const StreamPage();
-      case _NavTab.search:
-        return const SearchPage();
-      case _NavTab.tags:
-        return const AllTagsPage();
-    }
   }
 
   void _navigateToSettings() {
@@ -121,31 +105,58 @@ class _AppShellState extends State<_AppShell>
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.background,
-      body: AnimatedSwitcher(
-        duration: const Duration(milliseconds: 280),
-        switchInCurve: Curves.easeOut,
-        switchOutCurve: Curves.easeIn,
-        transitionBuilder: (child, animation) =>
-            FadeTransition(opacity: animation, child: child),
-        child: KeyedSubtree(key: ValueKey(_tab), child: _buildPage()),
+      body: Stack(
+        children: [
+          // ── All tab pages are always mounted (Offstage keeps them alive).
+          //    This is critical for the WebView — it must never be disposed
+          //    or music.youtube.com will lose its state and stop playing.
+          Offstage(
+            offstage: _tab != _NavTab.home,
+            child: TickerMode(
+              enabled: _tab == _NavTab.home,
+              child: VibePage(onSettingsTap: _navigateToSettings),
+            ),
+          ),
+          Offstage(
+            offstage: _tab != _NavTab.stream,
+            child: TickerMode(
+              enabled: _tab == _NavTab.stream,
+              child: const WebStreamPage(),
+            ),
+          ),
+          Offstage(
+            offstage: _tab != _NavTab.search,
+            child: TickerMode(
+              enabled: _tab == _NavTab.search,
+              child: const SearchPage(),
+            ),
+          ),
+          Offstage(
+            offstage: _tab != _NavTab.tags,
+            child: TickerMode(
+              enabled: _tab == _NavTab.tags,
+              child: const AllTagsPage(),
+            ),
+          ),
+        ],
       ),
       bottomNavigationBar: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          // Show only one mini player at a time.
-          // Stream takes priority; local mini player hides while stream is active.
-          Consumer2<MusicStreamProvider, AudioProvider>(
-            builder: (context, stream, audio, _) {
-              if (stream.hasSong) {
-                return const StreamMiniPlayer();
-              }
+          // ── Mini Player ─────────────────────────────────────────────────
+          // Local MiniPlayer shows when a local song is active.
+          Consumer<AudioProvider>(
+            builder: (context, audio, _) {
               if (audio.currentSong != null) {
                 return const MiniPlayer();
               }
               return const SizedBox.shrink();
             },
           ),
-          _SpotifyBottomNav(currentIndex: _tab.index, onTap: _onTabChanged),
+          _SpotifyBottomNav(
+            currentIndex: _tab.index,
+            onTap: _onTabChanged,
+          ),
         ],
       ),
     );
