@@ -1,0 +1,38 @@
+! MyMusic Ad Block Rules — YouTube Music Optimized
+! Updated: 2026-08-16
+! Sources: EasyList, EasyPrivacy, uBlock-YouTube, Peter Lowe
+!
+! ── Google Ad Networks ────────────────────────────────────────────────────
+||doubleclick.net^
+||googleadservices.com^
+||googlesyndication.com^
+||googletagmanager.com^
+||googletagservices.com^
+||google-analytics.com^
+||analytics.google.com^
+!
+! ── YouTube Ad Endpoints ──────────────────────────────────────────────────
+||youtube.com/api/stats/ads^
+||youtube.com/pagead^
+||youtube.com/ptracking^
+||youtube.com/get_midroll_info^
+||youtubei.googleapis.com/youtubei/v1/log_event^
+!
+! ── Ad Tracking / Attribution ─────────────────────────────────────────────
+||ade.googlesyndication.com^
+||adservice.google.com^
+||adservice.google.com.au^
+||pagead2.googlesyndication.com^
+||partner.googleadservices.com^
+!
+! ── Third-party Trackers ──────────────────────────────────────────────────
+||scorecardresearch.com^
+||omtrdc.net^
+||2mdn.net^
+||moatads.com^
+!
+! ── Cosmetic rules (DOM element hiding) ───────────────────────────────────
+music.youtube.com##ytmusic-mealbar-promo-renderer
+music.youtube.com##[component-style*="PREMIUM"]
+youtube.com##.ytp-ad-overlay-container
+youtube.com##.ytp-ad-module

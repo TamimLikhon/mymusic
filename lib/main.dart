@@ -7,6 +7,9 @@ import 'providers/tag_provider.dart';
 import 'providers/audio_provider.dart';
 import 'services/unified_audio_service.dart';
 import 'services/web_audio_service.dart';
+import 'services/ad_block/ad_block_service.dart';
+import 'services/ad_block/blocklist_updater.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'app.dart';
 
 void main() async {
@@ -29,6 +32,12 @@ void main() async {
   final database = AppDatabase();
   final audioProvider = AudioProvider(database);
   final webAudioService = WebAudioService();
+  
+  final adBlockService = AdBlockService();
+  await adBlockService.initialize();
+  
+  final prefs = await SharedPreferences.getInstance();
+  BlocklistUpdater(adBlockService, prefs).checkAndUpdate();
 
   runApp(
     MultiProvider(
@@ -38,6 +47,7 @@ void main() async {
         ChangeNotifierProvider(create: (_) => TagProvider(database)),
         ChangeNotifierProvider.value(value: audioProvider),
         ChangeNotifierProvider.value(value: webAudioService),
+        ChangeNotifierProvider.value(value: adBlockService),
       ],
       child: MyMusicApp(audioProvider: audioProvider),
     ),
