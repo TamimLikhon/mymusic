@@ -101,7 +101,7 @@ class SettingsPage extends StatelessWidget {
                       context: context,
                       icon: HugeIcons.strokeRoundedInformationCircle,
                       title: 'About MyMusic',
-                      subtitle: 'Version 1.0.8',
+                      subtitle: 'Version 1.0.8-analytics-apk-build-fixed',
                       onTap: () {
                         if (onNavigateAbout != null) {
                           onNavigateAbout!();

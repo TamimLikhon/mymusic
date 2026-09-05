@@ -1,0 +1,19 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<network-security-config>
+    <!-- Allow all HTTPS traffic (required for YouTube Music) -->
+    <base-config cleartextTrafficPermitted="false">
+        <trust-anchors>
+            <certificates src="system" />
+        </trust-anchors>
+    </base-config>
+    <!-- Allow YouTube Music domains specifically -->
+    <domain-config cleartextTrafficPermitted="false">
+        <domain includeSubdomains="true">youtube.com</domain>
+        <domain includeSubdomains="true">music.youtube.com</domain>
+        <domain includeSubdomains="true">googlevideo.com</domain>
+        <domain includeSubdomains="true">ytimg.com</domain>
+        <trust-anchors>
+            <certificates src="system" />
+        </trust-anchors>
+    </domain-config>
+</network-security-config>

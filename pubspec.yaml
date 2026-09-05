@@ -28,6 +28,10 @@ dependencies:
   flutter_inappwebview: ^6.1.5
   flutter_secure_storage: ^9.2.2
   http: ^1.2.0
+  # ── Firebase ────────────────────────────────────────────────────────────────
+  firebase_core: ^3.13.0
+  firebase_analytics: ^11.4.0        # Session duration, user counts, custom events
+  firebase_crashlytics: ^4.3.0       # Crash rate, stack traces, crash-free %
 
 dev_dependencies:
   flutter_test:

@@ -484,9 +484,6 @@ class _WebStreamPageState extends State<WebStreamPage> {
                   minHeight: 2.5,
                 ),
               ),
-
-            // Error overlay with reload button
-            if (_hasError) _buildErrorOverlay(),
           ],
         ),
       ),
@@ -867,60 +864,6 @@ class _WebStreamPageState extends State<WebStreamPage> {
           },
         );
       },
-    );
-  }
-
-  Widget _buildErrorOverlay() {
-    return Positioned.fill(
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-        child: Container(
-          color: AppColors.background.withValues(alpha: 0.85),
-          child: Center(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Icon(
-                  Icons.wifi_off_rounded,
-                  color: AppColors.textSecondary,
-                  size: 56,
-                ),
-                const SizedBox(height: 16),
-                Text(
-                  'Could not load YouTube Music',
-                  style: AppTypography.bodyMedium.copyWith(
-                    color: AppColors.textSecondary,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  'Check your internet connection',
-                  style: AppTypography.caption,
-                ),
-                const SizedBox(height: 24),
-                FilledButton.icon(
-                  onPressed: () {
-                    setState(() => _hasError = false);
-                    _controller?.reload();
-                  },
-                  icon: const Icon(Icons.refresh_rounded, size: 18),
-                  label: const Text('Retry'),
-                  style: FilledButton.styleFrom(
-                    backgroundColor: const Color(0xFF6C63FF),
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 24,
-                      vertical: 12,
-                    ),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
     );
   }
 }

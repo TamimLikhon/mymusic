@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:hugeicons/hugeicons.dart';
 import 'services/permission_service.dart';
+import 'services/analytics_service.dart';
 import 'core/theme/app_theme.dart';
 import 'core/theme/app_colors.dart';
 import 'core/theme/app_typography.dart';
@@ -58,6 +59,9 @@ class _MyMusicAppState extends State<MyMusicApp> with WidgetsBindingObserver {
       debugShowCheckedModeBanner: false,
       theme: AppTheme.darkTheme,
       home: const _AppShell(),
+      // Automatically fires screen_view events on every route change.
+      // Visible in Firebase Console: Analytics → Events → screen_view
+      navigatorObservers: [AnalyticsService.instance.observer],
       onGenerateRoute: (settings) {
         if (settings.name?.startsWith('/tag/') == true) {
           final tagId = settings.name!.replaceFirst('/tag/', '');

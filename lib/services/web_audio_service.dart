@@ -5,6 +5,7 @@ import 'package:just_audio/just_audio.dart';
 import 'package:just_audio_background/just_audio_background.dart';
 import 'auth_service.dart';
 import 'unified_audio_service.dart';
+import 'analytics_service.dart';
 
 /// Holds the song title and artist extracted from the YouTube Music DOM
 /// via the JavaScript MutationObserver bridge.
@@ -53,6 +54,11 @@ class WebAudioService extends ChangeNotifier {
 
     if (info != null) {
       _startLockScreenSession(info.title, info.artist);
+      // Track streamed songs as well
+      AnalyticsService.instance.logSongPlayed(
+        title: info.title,
+        artist: info.artist,
+      );
     } else {
       _stopLockScreenSession();
     }

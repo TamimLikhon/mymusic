@@ -1,6 +1,10 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:just_audio_background/just_audio_background.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_crashlytics/firebase_crashlytics.dart';
+import 'firebase_options.dart';
 import 'data/database/app_database.dart';
 import 'providers/song_provider.dart';
 import 'providers/tag_provider.dart';
@@ -14,6 +18,23 @@ import 'app.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // ── Firebase: must be initialized before anything else ──────────────────
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
+
+  // Send all Flutter framework errors (widget build, rendering, etc.) to
+  // Crashlytics. These are caught inside the Flutter engine itself.
+  FlutterError.onError = FirebaseCrashlytics.instance.recordFlutterFatalError;
+
+  // Catch errors that occur in async code OUTSIDE the Flutter widget tree
+  // (e.g. Future callbacks, isolate errors, dart:io exceptions).
+  PlatformDispatcher.instance.onError = (error, stack) {
+    FirebaseCrashlytics.instance.recordError(error, stack, fatal: true);
+    return true; // true = error is handled, don't crash the app
+  };
+  // ─────────────────────────────────────────────────────────────────────────
 
   // Initialize just_audio_background for notification controls (used by both
   // the local music engine and the WebView's silent-audio lock screen trick).

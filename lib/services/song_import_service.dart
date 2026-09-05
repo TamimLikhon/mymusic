@@ -1,9 +1,10 @@
-import 'dart:io';
+﻿import 'dart:io';
 import 'package:drift/drift.dart';
 import 'package:uuid/uuid.dart';
 import 'package:audio_metadata_reader/audio_metadata_reader.dart';
 import '../data/database/app_database.dart';
 import '../core/utils/file_utils.dart';
+import 'analytics_service.dart';
 
 class SongImportService {
   final AppDatabase _db;
@@ -33,6 +34,12 @@ class SongImportService {
         // Skip directories that can't be accessed
         continue;
       }
+    }
+
+    if (newSongPaths.isNotEmpty) {
+      // Only log when at least one song was actually added.
+      // Visible in Firebase Console: Events → song_imported → songs_count
+      AnalyticsService.instance.logSongImported(count: newSongPaths.length);
     }
     return newSongPaths;
   }
