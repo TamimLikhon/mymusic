@@ -289,8 +289,8 @@ class AllTagsPage extends StatelessWidget {
 
     showDialog(
       context: context,
-      builder: (context) => StatefulBuilder(
-        builder: (context, setState) {
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (dialogContext, setState) {
           return AlertDialog(
             title: Text('New Tag', style: AppTypography.heading),
             content: Column(
@@ -319,15 +319,20 @@ class AllTagsPage extends StatelessWidget {
             ),
             actions: [
               TextButton(
-                onPressed: () => Navigator.pop(context),
+                onPressed: () {
+                  FocusManager.instance.primaryFocus?.unfocus();
+                  Navigator.pop(dialogContext);
+                },
                 child: Text('Cancel',
                     style: AppTypography.body.copyWith(color: AppColors.textSecondary)),
               ),
               TextButton(
                 onPressed: () {
-                  if (nameController.text.isNotEmpty) {
-                    context.read<TagProvider>().createTag(nameController.text, selectedColor);
-                    Navigator.pop(context);
+                  final trimmed = nameController.text.trim();
+                  if (trimmed.isNotEmpty) {
+                    FocusManager.instance.primaryFocus?.unfocus();
+                    context.read<TagProvider>().createTag(trimmed, selectedColor);
+                    Navigator.pop(dialogContext);
                   }
                 },
                 child: Text('Create',
@@ -347,8 +352,8 @@ class AllTagsPage extends StatelessWidget {
 
     showDialog(
       context: context,
-      builder: (context) => StatefulBuilder(
-        builder: (context, setState) {
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (dialogContext, setState) {
           return AlertDialog(
             title: Text('Edit Tag', style: AppTypography.heading),
             content: Column(
@@ -376,17 +381,22 @@ class AllTagsPage extends StatelessWidget {
             ),
             actions: [
               TextButton(
-                onPressed: () => Navigator.pop(context),
+                onPressed: () {
+                  FocusManager.instance.primaryFocus?.unfocus();
+                  Navigator.pop(dialogContext);
+                },
                 child: Text('Cancel',
                     style: AppTypography.body.copyWith(color: AppColors.textSecondary)),
               ),
               TextButton(
                 onPressed: () {
-                  if (nameController.text.isNotEmpty) {
+                  final trimmed = nameController.text.trim();
+                  if (trimmed.isNotEmpty) {
+                    FocusManager.instance.primaryFocus?.unfocus();
                     context
                         .read<TagProvider>()
-                        .updateTag(tagId, nameController.text, selectedColor);
-                    Navigator.pop(context);
+                        .updateTag(tagId, trimmed, selectedColor);
+                    Navigator.pop(dialogContext);
                   }
                 },
                 child: Text('Save',

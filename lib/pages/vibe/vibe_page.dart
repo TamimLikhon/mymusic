@@ -603,7 +603,10 @@ class _VibePageState extends State<VibePage> {
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context),
+            onPressed: () {
+              FocusManager.instance.primaryFocus?.unfocus();
+              Navigator.pop(context);
+            },
             child: Text(
               'Cancel',
               style: AppTypography.body.copyWith(
@@ -615,6 +618,7 @@ class _VibePageState extends State<VibePage> {
             onPressed: () async {
               final newTitle = controller.text.trim();
               if (newTitle.isNotEmpty && newTitle != song.title) {
+                FocusManager.instance.primaryFocus?.unfocus();
                 final nav = Navigator.of(context);
                 final scaffoldMsg = ScaffoldMessenger.of(context);
                 final success = await context.read<SongProvider>().renameSong(

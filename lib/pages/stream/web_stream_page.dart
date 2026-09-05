@@ -1,6 +1,6 @@
 import 'dart:async';
-import 'dart:ui';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 import 'package:provider/provider.dart';
@@ -24,14 +24,43 @@ class WebStreamPage extends StatefulWidget {
 class _WebStreamPageState extends State<WebStreamPage> {
   InAppWebViewController? _controller;
   bool _isLoading = true;
-  bool _hasError = false;
 
   /// Watches the YouTube Music player bar DOM for title/artist changes and
   /// calls our Flutter handler with the new values.
-  static const _nowPlayingObserverJs = '''
+  static const _nowPlayingObserverJs = r'''
 (function() {
   if (window._myMusicObserverActive) return;
   window._myMusicObserverActive = true;
+
+  window._myMusicPlay = function() {
+    const btn = document.querySelector('ytmusic-player-bar .play-pause-button, #play-pause-button, .play-pause-button');
+    if (btn) {
+      const label = (btn.getAttribute('aria-label') || '').toLowerCase();
+      if (label.includes('play')) {
+        btn.click();
+        return;
+      }
+    }
+    const video = document.querySelector('video');
+    if (video && video.paused) {
+      video.play().catch(function(){});
+    }
+  };
+
+  window._myMusicPause = function() {
+    const btn = document.querySelector('ytmusic-player-bar .play-pause-button, #play-pause-button, .play-pause-button');
+    if (btn) {
+      const label = (btn.getAttribute('aria-label') || '').toLowerCase();
+      if (label.includes('pause')) {
+        btn.click();
+        return;
+      }
+    }
+    const video = document.querySelector('video');
+    if (video && !video.paused) {
+      video.pause();
+    }
+  };
 
   function getTitle() {
     const el = document.querySelector(
@@ -47,31 +76,52 @@ class _WebStreamPageState extends State<WebStreamPage> {
     return el ? el.textContent.trim() : '';
   }
 
+  function getThumbnailUrl() {
+    // Try multiple YouTube Music player bar image selectors.
+    const img = document.querySelector('ytmusic-player-bar img.thumbnail') ||
+                document.querySelector('#song-image yt-img-shadow img') ||
+                document.querySelector('ytmusic-player-bar yt-img-shadow img') ||
+                document.querySelector('.content-image-container img');
+    if (!img || !img.src || img.src.startsWith('data:')) return '';
+    // Prefer a larger thumbnail for crisp notification & lock screen art.
+    return img.src.replace(/=w\d+-h\d+/, '=w544-h544');
+  }
+
   function getPlayState() {
-    const btn = document.querySelector('.play-pause-button');
-    if (!btn) return null;
+    const btn = document.querySelector('ytmusic-player-bar .play-pause-button, #play-pause-button, .play-pause-button');
+    if (!btn) {
+      const video = document.querySelector('video');
+      return video ? !video.paused : null;
+    }
     const label = btn.getAttribute('aria-label') || '';
     return label.toLowerCase().includes('pause');  // true = playing
   }
 
   let lastTitle = '';
   let lastArtist = '';
+  let lastThumb = '';
+  let lastPlayState = null;
 
   function notify() {
     const t = getTitle();
     const a = getArtist();
-    if (t !== lastTitle || a !== lastArtist) {
+    const thumb = getThumbnailUrl();
+    const isPlaying = getPlayState();
+
+    if (t !== lastTitle || a !== lastArtist || thumb !== lastThumb) {
       lastTitle = t;
       lastArtist = a;
-      window.flutter_inappwebview.callHandler('onNowPlayingChanged', t, a);
+      lastThumb = thumb;
+      window.flutter_inappwebview.callHandler('onNowPlayingChanged', t, a, thumb);
+    }
+
+    if (isPlaying !== null && isPlaying !== lastPlayState) {
+      lastPlayState = isPlaying;
+      window.flutter_inappwebview.callHandler('onWebPlayStateChanged', isPlaying);
     }
   }
 
-  // Poll every 1 second instead of using a heavy MutationObserver
-  // that runs on every DOM change in YouTube Music.
-  setInterval(notify, 1000);
-
-  // Fire once immediately in case the page already has a song loaded.
+  setInterval(notify, 500);
   notify();
 })();
 ''';
@@ -88,7 +138,6 @@ class _WebStreamPageState extends State<WebStreamPage> {
     .ytp-ad-skip-button-container,
     .ytp-ad-module,
     .ytp-ad-player-overlay,
-    ytmusic-shelf-renderer[is-music-shelf][role="main"] [is-carousel-item],
     ytd-promoted-sparkles-web-renderer,
     ytd-display-ad-renderer,
     ytd-banner-promo-renderer,
@@ -252,26 +301,16 @@ class _WebStreamPageState extends State<WebStreamPage> {
   window._myMusicUiCleanupActive = true;
 
   const CSS = `
-    /* Hide YouTube Music logo in top bar (all variations) */
+    /* Hide YouTube Music logo in top bar */
     ytmusic-logo,
     .ytmusic-nav-bar-logo,
-    a.ytmusic-nav-bar-logo,
-    a#logo,
-    #logo,
-    .header-logo,
-    ytm-mobile-topbar-renderer .header-logo,
-    ytm-mobile-topbar-renderer ytm-logo,
     ytmusic-nav-bar #left-content ytmusic-logo,
     ytmusic-nav-bar #left-content a#logo,
-    ytmusic-nav-bar #left-content .ytmusic-logo,
-    a.yt-simple-endpoint.style-scope.ytmusic-logo,
+    ytm-mobile-topbar-renderer ytm-logo,
     
-    /* Hide YouTube Music branding / logo in sidebar / guide drawer */
-    ytmusic-guide-renderer #header,
+    /* Hide YouTube Music branding in sidebar / guide drawer */
     ytmusic-guide-renderer ytmusic-logo,
     ytmusic-guide-renderer .logo,
-    ytm-navigation-drawer-header-renderer,
-    tp-yt-app-drawer #header,
     tp-yt-app-drawer ytmusic-logo,
     ytmusic-guide-entry-renderer[is-primary] ytmusic-logo,
     ytmusic-guide-entry-renderer a[href*="premium"],
@@ -348,6 +387,11 @@ class _WebStreamPageState extends State<WebStreamPage> {
                 initialUrlRequest: URLRequest(
                   url: WebUri('https://music.youtube.com'),
                 ),
+                gestureRecognizers: <Factory<OneSequenceGestureRecognizer>>{
+                  Factory<OneSequenceGestureRecognizer>(
+                    () => EagerGestureRecognizer(),
+                  ),
+                },
                 initialSettings: InAppWebViewSettings(
                   userAgent:
                       'Mozilla/5.0 (Linux; Android 13; Pixel 7) '
@@ -371,38 +415,43 @@ class _WebStreamPageState extends State<WebStreamPage> {
                 onWebViewCreated: (controller) async {
                   _controller = controller;
 
-                  // 1. Inject cookies BEFORE the page loads so YouTube
-                  //    sees the session on the very first request.
-                  await webAudioService.injectCookies(controller);
-
-                  // 2. Register the JS → Dart handler for now-playing.
+                  // 1. Register the JS → Dart handler for now-playing metadata.
                   controller.addJavaScriptHandler(
                     handlerName: 'onNowPlayingChanged',
                     callback: (args) {
                       if (args.length < 2) return;
                       final title = (args[0] as String?) ?? '';
                       final artist = (args[1] as String?) ?? '';
+                      final artUrl = args.length >= 3
+                          ? (args[2] as String?) ?? ''
+                          : '';
                       webAudioService.updateNowPlaying(
                         title.isNotEmpty
-                            ? WebNowPlaying(title: title, artist: artist)
+                            ? WebNowPlaying(
+                                title: title,
+                                artist: artist,
+                                artUrl: artUrl.isNotEmpty ? artUrl : null,
+                              )
                             : null,
                       );
-
-                      // Dart-side failsafe: trigger play from Flutter side
-                      Future.delayed(const Duration(milliseconds: 600), () {
-                        _controller?.evaluateJavascript(
-                          source: '''
-                            (function() {
-                              const video = document.querySelector('video');
-                              if (video && video.paused && !video.ended) {
-                                video.play().catch(() => {});
-                              }
-                            })();
-                          ''',
-                        );
-                      });
                     },
                   );
+
+                  // 2. Register the JS → Dart handler for play/pause state.
+                  controller.addJavaScriptHandler(
+                    handlerName: 'onWebPlayStateChanged',
+                    callback: (args) {
+                      if (args.isEmpty) return;
+                      final isPlaying = (args[0] as bool?) ?? false;
+                      webAudioService.syncWebPlaybackState(isPlaying);
+                    },
+                  );
+
+                  // 3. Wire the JS evaluator so WebAudioService can control
+                  //    video playback from the Android notification media player.
+                  webAudioService.setJsEvaluator((js) async {
+                    await _controller?.evaluateJavascript(source: js);
+                  });
 
                   // 3. Register ad skipped handler
                   controller.addJavaScriptHandler(
@@ -420,7 +469,6 @@ class _WebStreamPageState extends State<WebStreamPage> {
                   if (mounted) {
                     setState(() {
                       _isLoading = true;
-                      _hasError = false;
                     });
                   }
                 },
@@ -435,7 +483,6 @@ class _WebStreamPageState extends State<WebStreamPage> {
                   if (mounted) {
                     setState(() {
                       _isLoading = false;
-                      _hasError = true;
                     });
                   }
                 },

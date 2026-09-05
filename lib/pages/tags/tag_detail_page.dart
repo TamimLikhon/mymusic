@@ -5,6 +5,7 @@ import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_typography.dart';
 import '../../core/theme/glass_card.dart';
 import '../../providers/tag_provider.dart';
+import '../../providers/song_provider.dart';
 import '../../providers/audio_provider.dart';
 import '../../data/database/app_database.dart';
 import '../../widgets/song_tile.dart';
@@ -81,6 +82,19 @@ class _TagDetailPageState extends State<TagDetailPage> {
                     onPressed: () => Navigator.pop(context),
                   ),
                   actions: [
+                    Padding(
+                      padding: const EdgeInsets.only(right: 8),
+                      child: GestureDetector(
+                        onTap: () => _showAddSongsSheet(context, tag),
+                        child: Container(
+                          width: 36,
+                          height: 36,
+                          decoration: GlassCard.card(radius: 10),
+                          child: const HugeIcon(icon: HugeIcons.strokeRoundedAdd01,
+                              size: 18, color: AppColors.primary),
+                        ),
+                      ),
+                    ),
                     Padding(
                       padding: const EdgeInsets.only(right: 12),
                       child: GestureDetector(
@@ -174,7 +188,7 @@ class _TagDetailPageState extends State<TagDetailPage> {
                               icon: HugeIcons.strokeRoundedPlay,
                               color: tagColor,
                               onPressed: () =>
-                                  audioProvider.playFromTag(widget.tagId, _songs),
+                                   audioProvider.playFromTag(widget.tagId, _songs),
                             ),
                           ),
                           const SizedBox(width: 12),
@@ -197,20 +211,45 @@ class _TagDetailPageState extends State<TagDetailPage> {
                 if (_songs.isEmpty)
                   SliverFillRemaining(
                     child: Center(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          HugeIcon(icon: HugeIcons.strokeRoundedMusicNote01,
-                              size: 52, color: tagColor.withValues(alpha: 0.4)),
-                          const SizedBox(height: 16),
-                          Text('No songs in this tag', style: AppTypography.heading),
-                          const SizedBox(height: 8),
-                          Text(
-                            'Long-press any song and choose "Assign to tag"',
-                            style: AppTypography.caption,
-                            textAlign: TextAlign.center,
-                          ),
-                        ],
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 32),
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            HugeIcon(icon: HugeIcons.strokeRoundedMusicNote01,
+                                size: 52, color: tagColor.withValues(alpha: 0.4)),
+                            const SizedBox(height: 16),
+                            Text('No songs in this tag', style: AppTypography.heading),
+                            const SizedBox(height: 8),
+                            Text(
+                              'Add songs to this tag to start listening',
+                              style: AppTypography.caption,
+                              textAlign: TextAlign.center,
+                            ),
+                            const SizedBox(height: 20),
+                            GestureDetector(
+                              onTap: () => _showAddSongsSheet(context, tag),
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                                decoration: GlassCard.accent(radius: 20, accentColor: tagColor),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    const HugeIcon(icon: HugeIcons.strokeRoundedAdd01, size: 18, color: Colors.white),
+                                    const SizedBox(width: 8),
+                                    Text(
+                                      'Add Songs',
+                                      style: AppTypography.bodyMedium.copyWith(
+                                        color: Colors.white,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
                   )
@@ -257,6 +296,18 @@ class _TagDetailPageState extends State<TagDetailPage> {
                 const SliverPadding(padding: EdgeInsets.only(bottom: 20)),
               ],
             ),
+    );
+  }
+
+  void _showAddSongsSheet(BuildContext context, Tag tag) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (sheetContext) => _AddSongsToTagSheet(
+        tag: tag,
+        onChanged: _loadSongs,
+      ),
     );
   }
 
@@ -342,8 +393,8 @@ class _TagDetailPageState extends State<TagDetailPage> {
 
     showDialog(
       context: context,
-      builder: (context) => StatefulBuilder(
-        builder: (context, setState) => AlertDialog(
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (dialogContext, setState) => AlertDialog(
           title: Text('Edit Tag', style: AppTypography.heading),
           content: Column(
             mainAxisSize: MainAxisSize.min,
@@ -368,17 +419,22 @@ class _TagDetailPageState extends State<TagDetailPage> {
           ),
           actions: [
             TextButton(
-              onPressed: () => Navigator.pop(context),
+              onPressed: () {
+                FocusManager.instance.primaryFocus?.unfocus();
+                Navigator.pop(dialogContext);
+              },
               child: Text('Cancel',
                   style: AppTypography.body.copyWith(color: AppColors.textSecondary)),
             ),
             TextButton(
               onPressed: () {
-                if (nameController.text.isNotEmpty) {
+                final trimmed = nameController.text.trim();
+                if (trimmed.isNotEmpty) {
+                  FocusManager.instance.primaryFocus?.unfocus();
                   context
                       .read<TagProvider>()
-                      .updateTag(tag.id, nameController.text, selectedColor);
-                  Navigator.pop(context);
+                      .updateTag(tag.id, trimmed, selectedColor);
+                  Navigator.pop(dialogContext);
                 }
               },
               child: Text('Save',
@@ -428,6 +484,296 @@ class _TagDetailPageState extends State<TagDetailPage> {
   }
 }
 
+// ── Add Songs Sheet ──────────────────────────────────────────────────────────
+
+class _AddSongsToTagSheet extends StatefulWidget {
+  final Tag tag;
+  final VoidCallback onChanged;
+
+  const _AddSongsToTagSheet({required this.tag, required this.onChanged});
+
+  @override
+  State<_AddSongsToTagSheet> createState() => _AddSongsToTagSheetState();
+}
+
+class _AddSongsToTagSheetState extends State<_AddSongsToTagSheet> {
+  final TextEditingController _searchController = TextEditingController();
+  Set<String> _assignedSongIds = {};
+  bool _isLoading = true;
+  String _searchQuery = '';
+
+  @override
+  void initState() {
+    super.initState();
+    _loadAssignedSongs();
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _loadAssignedSongs() async {
+    final songs = await context.read<TagProvider>().getSongsForTag(widget.tag.id);
+    if (mounted) {
+      setState(() {
+        _assignedSongIds = songs.map((s) => s.id).toSet();
+        _isLoading = false;
+      });
+    }
+  }
+
+  Future<void> _toggleSong(Song song) async {
+    final tagProvider = context.read<TagProvider>();
+    final isAssigned = _assignedSongIds.contains(song.id);
+
+    setState(() {
+      if (isAssigned) {
+        _assignedSongIds.remove(song.id);
+      } else {
+        _assignedSongIds.add(song.id);
+      }
+    });
+
+    if (isAssigned) {
+      await tagProvider.removeSongFromTag(song.id);
+    } else {
+      await tagProvider.assignSongToTag(song.id, widget.tag.id);
+    }
+
+    widget.onChanged();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final allSongs = context.watch<SongProvider>().songs;
+    final tagColor = Color(widget.tag.color);
+
+    final filteredSongs = _searchQuery.isEmpty
+        ? allSongs
+        : allSongs.where((s) {
+            final q = _searchQuery.toLowerCase();
+            return s.title.toLowerCase().contains(q) ||
+                s.artist.toLowerCase().contains(q);
+          }).toList();
+
+    return Container(
+      height: MediaQuery.of(context).size.height * 0.75,
+      decoration: const BoxDecoration(
+        color: AppColors.surfaceHigh,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+      ),
+      child: Column(
+        children: [
+          // Handle
+          Container(
+            width: 40,
+            height: 4,
+            margin: const EdgeInsets.only(top: 12, bottom: 14),
+            decoration: BoxDecoration(
+              color: AppColors.surfaceBorder,
+              borderRadius: BorderRadius.circular(2),
+            ),
+          ),
+          // Header
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 0, 20, 12),
+            child: Row(
+              children: [
+                Container(
+                  width: 40,
+                  height: 40,
+                  decoration: BoxDecoration(
+                    color: tagColor.withValues(alpha: 0.2),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: HugeIcon(icon: HugeIcons.strokeRoundedTag01, color: tagColor, size: 20),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('Add Songs to Tag', style: AppTypography.heading),
+                      Text(
+                        widget.tag.name,
+                        style: AppTypography.caption.copyWith(color: tagColor, fontWeight: FontWeight.w600),
+                      ),
+                    ],
+                  ),
+                ),
+                Text(
+                  '${_assignedSongIds.length} added',
+                  style: AppTypography.caption.copyWith(color: AppColors.textSecondary),
+                ),
+              ],
+            ),
+          ),
+          // Search input (autofocus is FALSE so keyboard never pops automatically)
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+            child: Container(
+              height: 42,
+              decoration: GlassCard.card(radius: 12),
+              padding: const EdgeInsets.symmetric(horizontal: 12),
+              child: Row(
+                children: [
+                  const HugeIcon(icon: HugeIcons.strokeRoundedSearch01, size: 16, color: AppColors.textDisabled),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: TextField(
+                      controller: _searchController,
+                      autofocus: false,
+                      style: AppTypography.body.copyWith(fontSize: 13),
+                      decoration: InputDecoration(
+                        hintText: 'Filter songs...',
+                        hintStyle: AppTypography.caption.copyWith(fontSize: 13),
+                        border: InputBorder.none,
+                        isDense: true,
+                        contentPadding: EdgeInsets.zero,
+                      ),
+                      onChanged: (val) => setState(() => _searchQuery = val),
+                    ),
+                  ),
+                  if (_searchQuery.isNotEmpty)
+                    GestureDetector(
+                      onTap: () {
+                        _searchController.clear();
+                        setState(() => _searchQuery = '');
+                      },
+                      child: const HugeIcon(icon: HugeIcons.strokeRoundedCancel01, size: 16, color: AppColors.textSecondary),
+                    ),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(height: 8),
+          Divider(height: 1, color: AppColors.divider),
+          // Song list
+          if (_isLoading)
+            const Expanded(
+              child: Center(
+                child: CircularProgressIndicator(color: AppColors.primary, strokeWidth: 2),
+              ),
+            )
+          else if (filteredSongs.isEmpty)
+            Expanded(
+              child: Center(
+                child: Text(
+                  _searchQuery.isEmpty ? 'No songs in your library' : 'No matching songs found',
+                  style: AppTypography.caption,
+                ),
+              ),
+            )
+          else
+            Expanded(
+              child: ListView.builder(
+                padding: const EdgeInsets.symmetric(vertical: 6),
+                itemCount: filteredSongs.length,
+                itemBuilder: (context, index) {
+                  final song = filteredSongs[index];
+                  final isAssigned = _assignedSongIds.contains(song.id);
+
+                  return Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 3),
+                    child: GestureDetector(
+                      onTap: () => _toggleSong(song),
+                      child: AnimatedContainer(
+                        duration: const Duration(milliseconds: 150),
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                        decoration: BoxDecoration(
+                          color: isAssigned
+                              ? tagColor.withValues(alpha: 0.15)
+                              : AppColors.surface,
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                            color: isAssigned
+                                ? tagColor.withValues(alpha: 0.4)
+                                : Colors.transparent,
+                            width: 1,
+                          ),
+                        ),
+                        child: Row(
+                          children: [
+                            Container(
+                              width: 36,
+                              height: 36,
+                              decoration: BoxDecoration(
+                                color: isAssigned
+                                    ? tagColor.withValues(alpha: 0.25)
+                                    : AppColors.surfaceHigh,
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: HugeIcon(
+                                icon: isAssigned
+                                    ? HugeIcons.strokeRoundedCheckmarkCircle01
+                                    : HugeIcons.strokeRoundedMusicNote01,
+                                size: 18,
+                                color: isAssigned ? tagColor : AppColors.textSecondary,
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    song.title,
+                                    style: AppTypography.bodyMedium.copyWith(
+                                      fontWeight: isAssigned ? FontWeight.w600 : FontWeight.w500,
+                                      color: isAssigned ? AppColors.textPrimary : AppColors.textPrimary,
+                                    ),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                  Text(
+                                    song.artist.isEmpty ? 'Unknown Artist' : song.artist,
+                                    style: AppTypography.caption.copyWith(
+                                      fontSize: 11,
+                                      color: AppColors.textSecondary,
+                                    ),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ],
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            AnimatedContainer(
+                              duration: const Duration(milliseconds: 150),
+                              width: 28,
+                              height: 28,
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                color: isAssigned ? tagColor : Colors.transparent,
+                                border: Border.all(
+                                  color: isAssigned ? tagColor : AppColors.textDisabled,
+                                  width: 1.5,
+                                ),
+                              ),
+                              child: isAssigned
+                                  ? const HugeIcon(
+                                      icon: HugeIcons.strokeRoundedTick01,
+                                      size: 14,
+                                      color: Colors.white,
+                                    )
+                                  : null,
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
 // ── Action Button ─────────────────────────────────────────────────────────────
 
 class _ActionButton extends StatelessWidget {
@@ -473,3 +819,4 @@ class _ActionButton extends StatelessWidget {
     );
   }
 }
+

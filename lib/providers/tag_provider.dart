@@ -1,7 +1,6 @@
 import 'package:drift/drift.dart';
 import 'package:flutter/foundation.dart';
 import '../data/database/app_database.dart';
-import '../services/analytics_service.dart';
 
 class TagProvider extends ChangeNotifier {
   final AppDatabase _db;
@@ -39,8 +38,6 @@ class TagProvider extends ChangeNotifier {
         updated_at: DateTime.now().millisecondsSinceEpoch,
       ),
     );
-    // Visible in Firebase Console: Events → tag_created
-    AnalyticsService.instance.logTagCreated(tagName: name);
     await loadTags();
   }
 

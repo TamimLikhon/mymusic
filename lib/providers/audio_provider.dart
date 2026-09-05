@@ -4,7 +4,6 @@ import 'package:just_audio_background/just_audio_background.dart';
 import '../data/database/app_database.dart';
 import '../data/models/queue_state.dart';
 import '../services/unified_audio_service.dart';
-import '../services/analytics_service.dart';
 import '../core/utils/art_extractor.dart';
 
 class AudioProvider extends ChangeNotifier {
@@ -20,8 +19,6 @@ class AudioProvider extends ChangeNotifier {
   // True only while this provider owns the shared player (i.e. local music is
   // the active source). False when stream has taken over.
   bool _isActive = false;
-  
-  String? _lastLoggedSongId;
 
   QueueState get queueState => _queueState;
   bool get isPlaying => _isPlaying;
@@ -103,14 +100,6 @@ class AudioProvider extends ChangeNotifier {
         _db.songDao.updateLastPlayed(song.id);
         if (song.custom_art_path == null) {
           ArtExtractor.extractAndCacheArt(song.file_path, song.id);
-        }
-        if (_lastLoggedSongId != song.id) {
-          _lastLoggedSongId = song.id;
-          // Track which song was played and by whom.
-          AnalyticsService.instance.logSongPlayed(
-            title: song.title,
-            artist: song.artist ?? 'Unknown',
-          );
         }
       }
 

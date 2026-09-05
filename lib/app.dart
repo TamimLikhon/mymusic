@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:hugeicons/hugeicons.dart';
 import 'services/permission_service.dart';
-import 'services/analytics_service.dart';
 import 'core/theme/app_theme.dart';
 import 'core/theme/app_colors.dart';
 import 'core/theme/app_typography.dart';
@@ -13,7 +12,6 @@ import 'pages/settings/settings_page.dart';
 import 'pages/about/about_page.dart';
 import 'pages/search/search_page.dart';
 import 'pages/stream/web_stream_page.dart';
-import 'package:provider/provider.dart';
 import 'providers/audio_provider.dart';
 
 class MyMusicApp extends StatefulWidget {
@@ -59,9 +57,6 @@ class _MyMusicAppState extends State<MyMusicApp> with WidgetsBindingObserver {
       debugShowCheckedModeBanner: false,
       theme: AppTheme.darkTheme,
       home: const _AppShell(),
-      // Automatically fires screen_view events on every route change.
-      // Visible in Firebase Console: Analytics → Events → screen_view
-      navigatorObservers: [AnalyticsService.instance.observer],
       onGenerateRoute: (settings) {
         if (settings.name?.startsWith('/tag/') == true) {
           final tagId = settings.name!.replaceFirst('/tag/', '');
@@ -88,6 +83,7 @@ class _AppShellState extends State<_AppShell> {
   _NavTab _tab = _NavTab.home;
 
   void _onTabChanged(int index) {
+    FocusManager.instance.primaryFocus?.unfocus();
     setState(() => _tab = _NavTab.values[index]);
   }
 
@@ -116,30 +112,42 @@ class _AppShellState extends State<_AppShell> {
           //    or music.youtube.com will lose its state and stop playing.
           Offstage(
             offstage: _tab != _NavTab.home,
-            child: TickerMode(
-              enabled: _tab == _NavTab.home,
-              child: VibePage(onSettingsTap: _navigateToSettings),
+            child: IgnorePointer(
+              ignoring: _tab != _NavTab.home,
+              child: TickerMode(
+                enabled: _tab == _NavTab.home,
+                child: VibePage(onSettingsTap: _navigateToSettings),
+              ),
             ),
           ),
           Offstage(
             offstage: _tab != _NavTab.stream,
-            child: TickerMode(
-              enabled: _tab == _NavTab.stream,
-              child: const WebStreamPage(),
+            child: IgnorePointer(
+              ignoring: _tab != _NavTab.stream,
+              child: TickerMode(
+                enabled: _tab == _NavTab.stream,
+                child: const WebStreamPage(),
+              ),
             ),
           ),
           Offstage(
             offstage: _tab != _NavTab.search,
-            child: TickerMode(
-              enabled: _tab == _NavTab.search,
-              child: const SearchPage(),
+            child: IgnorePointer(
+              ignoring: _tab != _NavTab.search,
+              child: TickerMode(
+                enabled: _tab == _NavTab.search,
+                child: const SearchPage(),
+              ),
             ),
           ),
           Offstage(
             offstage: _tab != _NavTab.tags,
-            child: TickerMode(
-              enabled: _tab == _NavTab.tags,
-              child: const AllTagsPage(),
+            child: IgnorePointer(
+              ignoring: _tab != _NavTab.tags,
+              child: TickerMode(
+                enabled: _tab == _NavTab.tags,
+                child: const AllTagsPage(),
+              ),
             ),
           ),
         ],
@@ -148,15 +156,8 @@ class _AppShellState extends State<_AppShell> {
         mainAxisSize: MainAxisSize.min,
         children: [
           // ── Mini Player ─────────────────────────────────────────────────
-          // Local MiniPlayer shows when a local song is active.
-          Consumer<AudioProvider>(
-            builder: (context, audio, _) {
-              if (audio.currentSong != null) {
-                return const MiniPlayer();
-              }
-              return const SizedBox.shrink();
-            },
-          ),
+          // Shows the local MiniPlayer when an offline song is active.
+          const MiniPlayer(),
           _SpotifyBottomNav(
             currentIndex: _tab.index,
             onTap: _onTabChanged,
