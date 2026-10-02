@@ -24,9 +24,7 @@ dependencies:
   sqlite3_flutter_libs: ^0.6.0+eol
   url_launcher: ^6.3.2
   uuid: ^4.6.0
-  shared_preferences: ^2.5.5
   flutter_inappwebview: ^6.1.5
-  http: ^1.2.0
 
 dev_dependencies:
   flutter_test:
@@ -40,8 +38,6 @@ flutter:
   uses-material-design: true
   assets:
     - assets/icon.png
-    - assets/silence.mp3
-    - assets/ad_block/rules.txt
 
 flutter_launcher_icons:
   android: "launcher_icon"

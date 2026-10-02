@@ -81,10 +81,15 @@ class _AppShell extends StatefulWidget {
 
 class _AppShellState extends State<_AppShell> {
   _NavTab _tab = _NavTab.home;
+  bool _streamVisited = false;
 
   void _onTabChanged(int index) {
     FocusManager.instance.primaryFocus?.unfocus();
-    setState(() => _tab = _NavTab.values[index]);
+    final nextTab = _NavTab.values[index];
+    setState(() {
+      _tab = nextTab;
+      if (nextTab == _NavTab.stream) _streamVisited = true;
+    });
   }
 
   void _navigateToSettings() {
@@ -120,16 +125,17 @@ class _AppShellState extends State<_AppShell> {
               ),
             ),
           ),
-          Offstage(
-            offstage: _tab != _NavTab.stream,
-            child: IgnorePointer(
-              ignoring: _tab != _NavTab.stream,
-              child: TickerMode(
-                enabled: _tab == _NavTab.stream,
-                child: const WebStreamPage(),
+          if (_streamVisited)
+            Offstage(
+              offstage: _tab != _NavTab.stream,
+              child: IgnorePointer(
+                ignoring: _tab != _NavTab.stream,
+                child: TickerMode(
+                  enabled: _tab == _NavTab.stream,
+                  child: const WebStreamPage(),
+                ),
               ),
             ),
-          ),
           Offstage(
             offstage: _tab != _NavTab.search,
             child: IgnorePointer(

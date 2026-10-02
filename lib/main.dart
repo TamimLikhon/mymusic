@@ -6,17 +6,14 @@ import 'providers/song_provider.dart';
 import 'providers/tag_provider.dart';
 import 'providers/audio_provider.dart';
 import 'services/unified_audio_service.dart';
-import 'services/web_audio_service.dart';
-import 'services/ad_block/ad_block_service.dart';
-import 'services/ad_block/blocklist_updater.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'services/playback_coordinator.dart';
+import 'services/stream/stream_session_controller.dart';
 import 'app.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Initialize just_audio_background for notification controls (used by both
-  // the local music engine and the WebView's silent-audio lock screen trick).
+  // just_audio_background owns notification controls for local music only.
   await JustAudioBackground.init(
     androidNotificationChannelId: 'com.mymusic.audio',
     androidNotificationChannelName: 'MyMusic Playback',
@@ -30,15 +27,11 @@ void main() async {
   await UnifiedAudioService.instance.initialize();
 
   final database = AppDatabase();
-  final audioProvider = AudioProvider(database);
-  final webAudioService = WebAudioService();
+  final streamSession = StreamSessionController();
+  final playbackCoordinator = PlaybackCoordinator(streamSession: streamSession);
+  await playbackCoordinator.initialize();
+  final audioProvider = AudioProvider(database, playbackCoordinator);
   
-  final adBlockService = AdBlockService();
-  await adBlockService.initialize();
-  
-  final prefs = await SharedPreferences.getInstance();
-  BlocklistUpdater(adBlockService, prefs).checkAndUpdate();
-
   runApp(
     MultiProvider(
       providers: [
@@ -46,8 +39,8 @@ void main() async {
         ChangeNotifierProvider(create: (_) => SongProvider(database)),
         ChangeNotifierProvider(create: (_) => TagProvider(database)),
         ChangeNotifierProvider.value(value: audioProvider),
-        ChangeNotifierProvider.value(value: webAudioService),
-        ChangeNotifierProvider.value(value: adBlockService),
+        ChangeNotifierProvider.value(value: streamSession),
+        ChangeNotifierProvider.value(value: playbackCoordinator),
       ],
       child: MyMusicApp(audioProvider: audioProvider),
     ),

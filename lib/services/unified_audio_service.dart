@@ -1,9 +1,10 @@
 import 'package:audio_session/audio_session.dart';
 import 'package:just_audio/just_audio.dart';
 
-/// Singleton that owns the single [AudioPlayer] instance shared across the
-/// entire app.  just_audio_background only permits one player at a time, so
-/// both the local-music layer and the streaming layer share this one instance.
+/// Singleton that owns the local [AudioPlayer] instance.
+///
+/// Web streams deliberately do not use this player: their WebView renderer is
+/// the audio source and Android state is represented by a separate MediaSession.
 class UnifiedAudioService {
   UnifiedAudioService._();
   static final UnifiedAudioService instance = UnifiedAudioService._();

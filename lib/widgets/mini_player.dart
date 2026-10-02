@@ -31,7 +31,7 @@ class MiniPlayer extends StatelessWidget {
             ).animate(CurvedAnimation(parent: anim, curve: Curves.easeOut)),
             child: FadeTransition(opacity: anim, child: child),
           ),
-          child: song == null
+          child: song == null || !audioProvider.isLocalSessionActive
               ? const SizedBox.shrink(key: Key('mini_player_empty'))
               : _MiniPlayerContent(
                   key: const Key('mini_player_active'),

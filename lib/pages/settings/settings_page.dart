@@ -101,7 +101,7 @@ class SettingsPage extends StatelessWidget {
                       context: context,
                       icon: HugeIcons.strokeRoundedInformationCircle,
                       title: 'About MyMusic',
-                      subtitle: 'Version 1.0.1+9',
+                      subtitle: 'feat(stream): implement controlled YouTube Music session: Version 1.0.1+10',
                       onTap: () {
                         if (onNavigateAbout != null) {
                           onNavigateAbout!();

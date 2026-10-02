@@ -3,6 +3,7 @@ import 'package:just_audio/just_audio.dart';
 import 'package:just_audio_background/just_audio_background.dart';
 import '../data/database/app_database.dart';
 import '../data/models/queue_state.dart';
+import '../services/playback_coordinator.dart';
 import '../services/unified_audio_service.dart';
 import '../core/utils/art_extractor.dart';
 
@@ -15,7 +16,8 @@ class AudioProvider extends ChangeNotifier {
   bool _isPlaying = false;
   Duration _position = Duration.zero;
   Duration _duration = Duration.zero;
-  final bool _isLoading = false;
+  bool _isLoading = false;
+  final PlaybackCoordinator _playbackCoordinator;
   // True only while this provider owns the shared player (i.e. local music is
   // the active source). False when stream has taken over.
   bool _isActive = false;
@@ -24,13 +26,15 @@ class AudioProvider extends ChangeNotifier {
   bool get isPlaying => _isPlaying;
   Duration get position => _position;
   Duration get duration => _duration;
+  bool get isLocalSessionActive => _isActive;
   bool get isLoading => _isLoading;
   Song? get currentSong => _queueState.currentSong;
   AudioPlayer get player => _player;
 
   final ValueNotifier<Duration> positionNotifier = ValueNotifier(Duration.zero);
 
-  AudioProvider(this._db) {
+  AudioProvider(this._db, this._playbackCoordinator) {
+    _playbackCoordinator.registerLocalPlayback(_stopForCoordinator);
     _initStreams();
   }
 
@@ -50,13 +54,14 @@ class AudioProvider extends ChangeNotifier {
     _player.playerStateStream.listen((state) {
       if (!_isActive) return;
       _isPlaying = state.playing;
+      _playbackCoordinator.reportLocalPlaybackState(_isPlaying);
       notifyListeners();
     });
 
     _player.playbackEventStream.listen(
       (event) {},
       onError: (Object e, StackTrace st) {
-        if (e is PlayerException) {
+        if (_isActive && e is PlayerException) {
           _player.seekToNext();
         }
       },
@@ -64,6 +69,7 @@ class AudioProvider extends ChangeNotifier {
 
     _player.sequenceStateStream.listen((sequenceState) {
       final effectiveSequence = sequenceState.effectiveSequence;
+      if (!_isActive) return;
       if (effectiveSequence.isEmpty) return;
 
       final baseQueue = _queueState.unshuffledQueue ?? _queueState.queue;
@@ -136,11 +142,14 @@ class AudioProvider extends ChangeNotifier {
     String cacheDirPath, {
     int initialIndex = 0,
   }) async {
-    // Stop any active session (local or stream) before loading a new source.
+    // The coordinator pauses and detaches the web stream before local playback.
+    await _playbackCoordinator.prepareLocalPlayback();
     await _player.stop();
 
     // Claim ownership of the shared player for local music.
     _isActive = true;
+    _isLoading = true;
+    notifyListeners();
 
     // ignore: deprecated_member_use
     final playlist = ConcatenatingAudioSource(
@@ -167,6 +176,8 @@ class AudioProvider extends ChangeNotifier {
       initialIndex: initialIndex,
       initialPosition: Duration.zero,
     );
+    _isLoading = false;
+    notifyListeners();
   }
 
   // ── Public playback API ────────────────────────────────────────────────────
@@ -269,8 +280,19 @@ class AudioProvider extends ChangeNotifier {
     await _player.play();
   }
 
-  Future<void> play() async => await _player.play();
-  Future<void> pause() async => await _player.pause();
+  Future<void> play() async {
+    if (!_isActive) {
+      if (_queueState.queue.isEmpty) return;
+      await _playbackCoordinator.prepareLocalPlayback();
+      _isActive = true;
+    }
+    await _player.play();
+  }
+
+  Future<void> pause() async {
+    if (!_isActive) return;
+    await _player.pause();
+  }
 
   Future<void> togglePlayPause() async {
     if (_isPlaying) {
@@ -310,7 +332,13 @@ class AudioProvider extends ChangeNotifier {
   }
 
   Future<void> stop() async {
-    _isActive = false; // Release ownership so stream events are ignored.
+    await _stopForCoordinator();
+    _playbackCoordinator.reportLocalPlaybackStopped();
+  }
+
+  Future<void> _stopForCoordinator() async {
+    _isActive = false;
+    _isLoading = false;
     await _player.stop();
     _isPlaying = false;
     _position = Duration.zero;
@@ -353,6 +381,7 @@ class AudioProvider extends ChangeNotifier {
   @override
   void dispose() {
     // The player is owned by UnifiedAudioService — do not dispose it here.
+    positionNotifier.dispose();
     super.dispose();
   }
 }
