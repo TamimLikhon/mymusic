@@ -306,6 +306,49 @@ class AudioProvider extends ChangeNotifier {
 
   Future<void> next() async => await _player.seekToNext();
 
+  /// Inserts [song] right after the currently playing track.
+  Future<void> playNext(Song song) async {
+    if (!_isActive || _queueState.queue.isEmpty) {
+      // Nothing playing — just start playing it
+      await playAllSongs([song]);
+      return;
+    }
+
+    final source = _player.audioSource;
+    if (source is! ConcatenatingAudioSource) return;
+
+    final insertIndex = (_player.currentIndex ?? 0) + 1;
+    final cacheDir = await ArtExtractor.getCacheDir();
+
+    final newSource = AudioSource.uri(
+      Uri.parse('file://${song.file_path}'),
+      tag: MediaItem(
+        id: song.id,
+        title: song.title,
+        artist: song.artist,
+        album: song.album,
+        artUri: song.custom_art_path != null
+            ? Uri.file(song.custom_art_path!)
+            : Uri.file('$cacheDir/${song.id}.jpg'),
+      ),
+    );
+
+    await source.insert(insertIndex, newSource);
+
+    // Also update the unshuffled queue if present
+    final base = _queueState.unshuffledQueue ?? _queueState.queue;
+    final currentSongId = _queueState.currentSong?.id;
+    final baseIndex = base.indexWhere((s) => s.id == currentSongId);
+    final newBase = List<Song>.from(base);
+    newBase.insert(baseIndex == -1 ? base.length : baseIndex + 1, song);
+
+    _queueState = _queueState.copyWith(
+      queue: newBase,
+      unshuffledQueue: newBase,
+    );
+    notifyListeners();
+  }
+
   Future<void> jumpToQueueIndex(int index) async {
     if (index < 0 || index >= _queueState.queue.length) return;
 

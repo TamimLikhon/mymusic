@@ -38,9 +38,12 @@ class UnifiedAudioService {
             player.setVolume(1.0);
             break;
           case AudioInterruptionType.pause:
-            if (_wasPlayingBeforeInterruption) player.play();
-            break;
           case AudioInterruptionType.unknown:
+            // Resume if we were playing before the interruption began.
+            // Covers both explicit pause interruptions (phone calls) and
+            // transient unknown events (BT headset reconnect, assistant
+            // dismissal) where the OS does not auto-resume for us.
+            if (_wasPlayingBeforeInterruption) player.play();
             break;
         }
       }

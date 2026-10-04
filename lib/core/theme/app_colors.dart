@@ -1,67 +1,88 @@
 import 'package:flutter/material.dart';
 
 class AppColors {
-  // ── Deep Space Dark Palette ───────────────────────────────────────────────
+  // ── Midnight Violet Palette ───────────────────────────────────────────────
 
-  /// Primary canvas — near-black with a deep blue tint
-  static const Color background = Color(0xFF0A0A0F);
+  /// Primary canvas — deep midnight indigo (warmer than black)
+  static const Color background = Color(0xFF08081A);
 
-  /// Elevated surface — cards, panels
-  static const Color surface = Color(0xFF141420);
+  /// Elevated surface — cards, panels (violet-tinted dark)
+  static const Color surface = Color(0xFF10102A);
 
   /// Higher surface — modals, sheets
-  static const Color surfaceHigh = Color(0xFF1E1E30);
+  static const Color surfaceHigh = Color(0xFF181836);
 
   /// Subtle dividers & borders
-  static const Color surfaceBorder = Color(0xFF2A2A3E);
+  static const Color surfaceBorder = Color(0xFF252548);
 
   // ── Brand / Accent ────────────────────────────────────────────────────────
 
-  /// Primary indigo accent
-  static const Color primary = Color(0xFF6C63FF);
+  /// Primary — vibrant soft violet / lavender
+  static const Color primary = Color(0xFFC084FC);
 
-  /// Lighter indigo for hover/tinted surfaces
-  static const Color primaryLight = Color(0xFF8B84FF);
+  /// Lighter violet for hover/tinted surfaces
+  static const Color primaryLight = Color(0xFFD8AAFF);
 
-  /// Indigo with low opacity — subtle tints
-  static const Color primaryFaint = Color(0x1A6C63FF);
+  /// Violet with low opacity — subtle tints
+  static const Color primaryFaint = Color(0x1AC084FC);
+
+  /// Primary glow for bloom effects
+  static const Color primaryGlow = Color(0x50C084FC);
 
   /// Playback green — seek bar fill, now-playing indicator
-  static const Color green = Color(0xFF1BDB7A);
+  static const Color green = Color(0xFF4ADE80);
 
-  /// Secondary coral-pink for destructive / tag accents
-  static const Color secondary = Color(0xFFFF6584);
+  /// Green glow
+  static const Color greenGlow = Color(0x404ADE80);
 
-  /// Teal accent
-  static const Color accent = Color(0xFF43C6AC);
+  /// Secondary rose-pink for destructive / tag accents
+  static const Color secondary = Color(0xFFF472B6);
+
+  /// Teal-cyan accent
+  static const Color accent = Color(0xFF67E8F9);
 
   // ── Text ──────────────────────────────────────────────────────────────────
 
-  static const Color textPrimary = Color(0xFFEEEEFF);
-  static const Color textSecondary = Color(0xFF9090A8);
-  static const Color textDisabled = Color(0xFF4A4A60);
+  static const Color textPrimary = Color(0xFFF0EEFF);
+  static const Color textSecondary = Color(0xFF8878B0);
+  static const Color textDisabled = Color(0xFF3A3860);
 
   // ── Status / Misc ─────────────────────────────────────────────────────────
 
-  static const Color divider = Color(0xFF1E1E30);
-  static const Color error = Color(0xFFFF5370);
-  static const Color success = Color(0xFF1BDB7A);
+  static const Color divider = Color(0xFF181836);
+  static const Color error = Color(0xFFFF4D6D);
+  static const Color success = Color(0xFF4ADE80);
 
   // ── Glassmorphism ─────────────────────────────────────────────────────────
 
-  /// Glass surface fill
-  static const Color glassFill = Color(0x1AFFFFFF);
+  /// Primary glass fill — violet-white with light transparency
+  static const Color glassFill = Color(0x16FFFFFF);
 
-  /// Glass border
-  static const Color glassBorder = Color(0x26FFFFFF);
+  /// Stronger glass fill for elevated cards
+  static const Color glassFillMedium = Color(0x22FFFFFF);
 
-  // ── Legacy aliases (kept for backward compat with widgets not yet updated) ─
+  /// Top-lit glass fill for premium cards
+  static const Color glassFillStrong = Color(0x2EFFFFFF);
+
+  /// Glass border — light rim with warm violet tint
+  static const Color glassBorder = Color(0x35FFFFFF);
+
+  /// Strong glass border for modals and elevated cards
+  static const Color glassBorderStrong = Color(0x50FFFFFF);
+
+  /// Bright top-edge highlight border
+  static const Color glassHighlight = Color(0x55FFFFFF);
+
+  /// Subtle inner shadow for depth
+  static const Color glassInnerShadow = Color(0x18000000);
+
+  // ── Legacy aliases (kept for backward compat) ─────────────────────────────
   static const Color amber = primary;
   static const Color cream = textPrimary;
   static const Color burntOrange = secondary;
   static const Color neonGreen = green;
-  static const Color neonGreenFaint = Color(0x301BDB7A);
-  static const Color shadowDark = Color(0x40000000);
+  static const Color neonGreenFaint = Color(0x304ADE80);
+  static const Color shadowDark = Color(0x55000000);
   static const Color shadowLight = Color(0x0AFFFFFF);
   static const Color surfaceLight = surfaceHigh;
 
@@ -74,22 +95,28 @@ class AppColors {
   );
 
   static const LinearGradient greenGradient = LinearGradient(
-    colors: [green, Color(0xFF00A854)],
+    colors: [green, Color(0xFF22D3EE)],
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
+  );
+
+  static const LinearGradient backgroundGradient = LinearGradient(
+    colors: [Color(0xFF0D0B25), Color(0xFF08081A)],
+    begin: Alignment.topCenter,
+    end: Alignment.bottomCenter,
   );
 
   /// Generate a deterministic gradient from a string (e.g. song title hash)
   static List<Color> seedGradient(String seed) {
     final palettes = [
-      [const Color(0xFF6C63FF), const Color(0xFF43C6AC)],
-      [const Color(0xFFFF6584), const Color(0xFFFF8C69)],
-      [const Color(0xFF1BDB7A), const Color(0xFF00A8CC)],
-      [const Color(0xFFFF9800), const Color(0xFFFF5722)],
-      [const Color(0xFF9C27B0), const Color(0xFF673AB7)],
-      [const Color(0xFF2196F3), const Color(0xFF00BCD4)],
-      [const Color(0xFFE91E63), const Color(0xFF9C27B0)],
-      [const Color(0xFF4CAF50), const Color(0xFF8BC34A)],
+      [const Color(0xFFC084FC), const Color(0xFF67E8F9)],  // violet → cyan
+      [const Color(0xFFF472B6), const Color(0xFFFB923C)],  // rose → orange
+      [const Color(0xFF4ADE80), const Color(0xFF22D3EE)],  // green → teal
+      [const Color(0xFFFBBF24), const Color(0xFFF97316)],  // amber → orange
+      [const Color(0xFFA78BFA), const Color(0xFFC084FC)],  // purple → violet
+      [const Color(0xFF38BDF8), const Color(0xFF67E8F9)],  // sky → cyan
+      [const Color(0xFFE879F9), const Color(0xFFA78BFA)],  // fuchsia → purple
+      [const Color(0xFF4ADE80), const Color(0xFF38BDF8)],  // green → sky
     ];
     final idx = seed.isEmpty ? 0 : seed.codeUnitAt(0) % palettes.length;
     return palettes[idx];

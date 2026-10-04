@@ -1,3 +1,4 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'app_colors.dart';
@@ -7,9 +8,9 @@ import 'app_colors.dart';
 class GlassCard {
   GlassCard._();
 
-  /// Standard dark card surface
+  /// Standard dark card surface with glass feel
   static BoxDecoration card({
-    double radius = 16,
+    double radius = 18,
     Color color = AppColors.surface,
     bool withBorder = true,
   }) {
@@ -17,19 +18,61 @@ class GlassCard {
       color: color,
       borderRadius: BorderRadius.circular(radius),
       border: withBorder
-          ? Border.all(color: AppColors.surfaceBorder, width: 1)
+          ? Border.all(color: AppColors.glassBorder, width: 0.8)
           : null,
+      boxShadow: [
+        BoxShadow(
+          color: Colors.black.withValues(alpha: 0.3),
+          blurRadius: 16,
+          offset: const Offset(0, 4),
+        ),
+      ],
     );
   }
 
-  /// Frosted-glass surface (use with BackdropFilter)
+  /// True frosted-glass surface — pair with BackdropFilter for full effect
   static BoxDecoration glass({
-    double radius = 16,
+    double radius = 20,
+    Color? tint,
+    double tintOpacity = 0.12,
+  }) {
+    return BoxDecoration(
+      color: tint != null
+          ? tint.withValues(alpha: tintOpacity)
+          : AppColors.glassFill,
+      borderRadius: BorderRadius.circular(radius),
+      border: Border.all(color: AppColors.glassBorder, width: 0.8),
+      boxShadow: [
+        BoxShadow(
+          color: Colors.black.withValues(alpha: 0.35),
+          blurRadius: 24,
+          offset: const Offset(0, 8),
+        ),
+      ],
+    );
+  }
+
+  /// Premium glass surface with a glowing accent top edge
+  static BoxDecoration glassAccented({
+    double radius = 20,
+    Color accentColor = AppColors.primary,
   }) {
     return BoxDecoration(
       color: AppColors.glassFill,
       borderRadius: BorderRadius.circular(radius),
-      border: Border.all(color: AppColors.glassBorder, width: 1),
+      border: Border.all(color: accentColor.withValues(alpha: 0.35), width: 1),
+      boxShadow: [
+        BoxShadow(
+          color: accentColor.withValues(alpha: 0.15),
+          blurRadius: 24,
+          offset: const Offset(0, 4),
+        ),
+        BoxShadow(
+          color: Colors.black.withValues(alpha: 0.4),
+          blurRadius: 16,
+          offset: const Offset(0, 8),
+        ),
+      ],
     );
   }
 
@@ -40,17 +83,25 @@ class GlassCard {
   }) {
     return BoxDecoration(
       gradient: LinearGradient(
-        colors: [accentColor, Color.lerp(accentColor, AppColors.accent, 0.4)!],
+        colors: [
+          accentColor,
+          Color.lerp(accentColor, AppColors.accent, 0.45)!,
+        ],
         begin: Alignment.topLeft,
         end: Alignment.bottomRight,
       ),
       borderRadius: BorderRadius.circular(radius),
       boxShadow: [
         BoxShadow(
-          color: accentColor.withValues(alpha: 0.35),
+          color: accentColor.withValues(alpha: 0.4),
           offset: const Offset(0, 8),
-          blurRadius: 20,
-          spreadRadius: 0,
+          blurRadius: 24,
+          spreadRadius: -2,
+        ),
+        BoxShadow(
+          color: accentColor.withValues(alpha: 0.2),
+          offset: const Offset(0, 2),
+          blurRadius: 6,
         ),
       ],
     );
@@ -61,7 +112,14 @@ class GlassCard {
     return BoxDecoration(
       shape: BoxShape.circle,
       color: color,
-      border: Border.all(color: AppColors.surfaceBorder, width: 1),
+      border: Border.all(color: AppColors.glassBorder, width: 0.8),
+      boxShadow: [
+        BoxShadow(
+          color: Colors.black.withValues(alpha: 0.3),
+          blurRadius: 12,
+          offset: const Offset(0, 4),
+        ),
+      ],
     );
   }
 
@@ -89,7 +147,7 @@ class GlassCard {
     );
   }
 
-  // ── Legacy shims for old code still calling Neumorphic.* ─────────────────
+  // ── Legacy shims ─────────────────────────────────────────────────────────
 
   /// @deprecated Use GlassCard.card() instead
   static BoxDecoration raised({double radius = 16, Color color = AppColors.surface}) =>
@@ -105,7 +163,6 @@ class GlassCard {
 }
 
 /// Legacy alias so existing imports of `Neumorphic` still compile
-/// while we migrate widget by widget.
 class Neumorphic {
   Neumorphic._();
   static BoxDecoration raised({double radius = 16, Color color = AppColors.surface}) =>
@@ -118,33 +175,115 @@ class Neumorphic {
       GlassCard.accent(radius: radius, accentColor: accent);
 }
 
-/// Reusable glassmorphism Widget wrapper with BackdropFilter
+/// Full glassmorphism widget with BackdropFilter blur, gradient overlay, and border
 class GlassContainer extends StatelessWidget {
   final Widget child;
   final EdgeInsetsGeometry? padding;
   final double radius;
   final double blurSigma;
-  final Color? color;
+  final Color? tint;
+  final double tintOpacity;
+  final bool showBorder;
+  final BoxBorder? border;
+  final List<BoxShadow>? shadows;
 
   const GlassContainer({
     super.key,
     required this.child,
     this.padding,
-    this.radius = 20,
-    this.blurSigma = 20,
-    this.color,
+    this.radius = 22,
+    this.blurSigma = 14,
+    this.tint,
+    this.tintOpacity = 0.12,
+    this.showBorder = true,
+    this.border,
+    this.shadows,
   });
 
   @override
   Widget build(BuildContext context) {
     return ClipRRect(
       borderRadius: BorderRadius.circular(radius),
-      child: Container(
-        decoration: GlassCard.glass(radius: radius).copyWith(
-          color: color ?? AppColors.glassFill,
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: blurSigma, sigmaY: blurSigma),
+        child: Container(
+          padding: padding,
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                (tint ?? Colors.white).withValues(alpha: tintOpacity + 0.04),
+                (tint ?? Colors.white).withValues(alpha: tintOpacity - 0.02),
+              ],
+            ),
+            borderRadius: BorderRadius.circular(radius),
+            border: showBorder
+                ? (border ?? Border.all(color: AppColors.glassBorder, width: 0.8))
+                : null,
+            boxShadow: shadows ??
+                [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.3),
+                    blurRadius: 24,
+                    offset: const Offset(0, 8),
+                  ),
+                ],
+          ),
+          child: child,
         ),
-        padding: padding,
-        child: child,
+      ),
+    );
+  }
+}
+
+/// Glassmorphism widget with a gradient border shimmer (top edge lit)
+class ShimmerGlassContainer extends StatelessWidget {
+  final Widget child;
+  final EdgeInsetsGeometry? padding;
+  final double radius;
+  final double blurSigma;
+  final Color accentColor;
+
+  const ShimmerGlassContainer({
+    super.key,
+    required this.child,
+    this.padding,
+    this.radius = 22,
+    this.blurSigma = 14,
+    this.accentColor = AppColors.primary,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(radius),
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            accentColor.withValues(alpha: 0.4),
+            accentColor.withValues(alpha: 0.05),
+          ],
+        ),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(1),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(radius - 1),
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: blurSigma, sigmaY: blurSigma),
+            child: Container(
+              padding: padding,
+              decoration: BoxDecoration(
+                color: AppColors.glassFill,
+                borderRadius: BorderRadius.circular(radius - 1),
+              ),
+              child: child,
+            ),
+          ),
+        ),
       ),
     );
   }

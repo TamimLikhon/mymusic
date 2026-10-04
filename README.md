@@ -10,5 +10,7 @@ mini player control exist but never works for stream and also local music. on lo
 
 we should see music thumbnail card also
 
-
 unused file remvoed
+
+
+glassmophorium

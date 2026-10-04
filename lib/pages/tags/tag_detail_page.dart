@@ -1,3 +1,4 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:hugeicons/hugeicons.dart';
 import 'package:provider/provider.dart';
@@ -54,7 +55,15 @@ class _TagDetailPageState extends State<TagDetailPage> {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) Navigator.of(context).pop();
       });
-      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+      return const Scaffold(
+        backgroundColor: AppColors.background,
+        body: Center(
+          child: CircularProgressIndicator(
+            color: AppColors.primary,
+            strokeWidth: 2,
+          ),
+        ),
+      );
     }
 
     final tag = tagOrNull;
@@ -62,240 +71,396 @@ class _TagDetailPageState extends State<TagDetailPage> {
 
     return Scaffold(
       backgroundColor: AppColors.background,
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator(color: AppColors.primary, strokeWidth: 2))
-          : CustomScrollView(
-              slivers: [
-                // ── Immersive Header ─────────────────────────────────────────
-                SliverAppBar(
-                  backgroundColor: Colors.transparent,
-                  expandedHeight: 220,
-                  pinned: true,
-                  leading: IconButton(
-                    icon: Container(
-                      width: 36,
-                      height: 36,
-                      decoration: GlassCard.card(radius: 10),
-                      child: const HugeIcon(icon: HugeIcons.strokeRoundedArrowLeft01,
-                          size: 20, color: AppColors.textPrimary),
-                    ),
-                    onPressed: () => Navigator.pop(context),
-                  ),
-                  actions: [
-                    Padding(
-                      padding: const EdgeInsets.only(right: 8),
-                      child: GestureDetector(
-                        onTap: () => _showAddSongsSheet(context, tag),
-                        child: Container(
-                          width: 36,
-                          height: 36,
-                          decoration: GlassCard.card(radius: 10),
-                          child: const HugeIcon(icon: HugeIcons.strokeRoundedAdd01,
-                              size: 18, color: AppColors.primary),
-                        ),
-                      ),
-                    ),
-                    Padding(
-                      padding: const EdgeInsets.only(right: 12),
-                      child: GestureDetector(
-                        onTap: () => _showEditTagDialog(context, tag),
-                        child: Container(
-                          width: 36,
-                          height: 36,
-                          decoration: GlassCard.card(radius: 10),
-                          child: const HugeIcon(icon: HugeIcons.strokeRoundedEdit01,
-                              size: 18, color: AppColors.textSecondary),
-                        ),
-                      ),
-                    ),
+      body: Stack(
+        children: [
+          // ── Cosmos Ambient Glow Orbs ───────────────────────────────────────
+          Positioned(
+            top: -60,
+            right: -40,
+            child: Container(
+              width: 320,
+              height: 320,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                gradient: RadialGradient(
+                  colors: [
+                    tagColor.withValues(alpha: 0.35),
+                    tagColor.withValues(alpha: 0.08),
+                    Colors.transparent,
                   ],
-                  flexibleSpace: FlexibleSpaceBar(
-                    background: Stack(
-                      children: [
-                        // Gradient background seeded from tag color
-                        Container(
-                          decoration: BoxDecoration(
-                            gradient: LinearGradient(
-                              begin: Alignment.topCenter,
-                              end: Alignment.bottomCenter,
-                              colors: [
-                                tagColor.withValues(alpha: 0.40),
-                                AppColors.background,
-                              ],
+                ),
+              ),
+            ),
+          ),
+          Positioned(
+            top: 240,
+            left: -80,
+            child: Container(
+              width: 260,
+              height: 260,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                gradient: RadialGradient(
+                  colors: [
+                    AppColors.accent.withValues(alpha: 0.15),
+                    Colors.transparent,
+                  ],
+                ),
+              ),
+            ),
+          ),
+
+          // ── Main Scroll View ──────────────────────────────────────────────
+          _isLoading
+              ? const Center(
+                  child: CircularProgressIndicator(
+                    color: AppColors.primary,
+                    strokeWidth: 2,
+                  ),
+                )
+              : CustomScrollView(
+                  slivers: [
+                    // ── Immersive Header ─────────────────────────────────────
+                    SliverAppBar(
+                      backgroundColor: Colors.transparent,
+                      expandedHeight: 240,
+                      pinned: true,
+                      elevation: 0,
+                      leading: Padding(
+                        padding: const EdgeInsets.only(left: 12),
+                        child: Center(
+                          child: GestureDetector(
+                            onTap: () => Navigator.pop(context),
+                            child: Container(
+                              width: 38,
+                              height: 38,
+                              decoration: GlassCard.card(radius: 12),
+                              child: const Center(
+                                child: HugeIcon(
+                                  icon: HugeIcons.strokeRoundedArrowLeft01,
+                                  size: 20,
+                                  color: AppColors.textPrimary,
+                                ),
+                              ),
                             ),
                           ),
                         ),
-                        // Content
-                        SafeArea(
-                          child: Padding(
-                            padding: const EdgeInsets.fromLTRB(20, 56, 20, 16),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              mainAxisAlignment: MainAxisAlignment.end,
-                              children: [
-                                Container(
-                                  width: 72,
-                                  height: 72,
-                                  decoration: BoxDecoration(
-                                    color: tagColor.withValues(alpha: 0.25),
-                                    borderRadius: BorderRadius.circular(18),
-                                    border: Border.all(
-                                        color: tagColor.withValues(alpha: 0.5), width: 1.5),
-                                  ),
-                                  child: HugeIcon(icon: HugeIcons.strokeRoundedTag01, color: tagColor, size: 36),
+                      ),
+                      actions: [
+                        Padding(
+                          padding: const EdgeInsets.only(right: 8),
+                          child: GestureDetector(
+                            onTap: () => _showAddSongsSheet(context, tag),
+                            child: Container(
+                              width: 38,
+                              height: 38,
+                              decoration: GlassCard.card(radius: 12),
+                              child: const Center(
+                                child: HugeIcon(
+                                  icon: HugeIcons.strokeRoundedAdd01,
+                                  size: 18,
+                                  color: AppColors.primaryLight,
                                 ),
-                                const SizedBox(height: 12),
-                                Text(tag.name, style: AppTypography.hero),
-                                const SizedBox(height: 6),
-                                Row(
-                                  children: [
-                                    HugeIcon(icon: HugeIcons.strokeRoundedMusicNote01, size: 13, color: tagColor),
-                                    const SizedBox(width: 4),
-                                    Text(
-                                      '${_songs.length} songs',
-                                      style: AppTypography.caption.copyWith(color: tagColor),
-                                    ),
-                                    if (_songs.isNotEmpty) ...[
-                                      const SizedBox(width: 16),
-                                      HugeIcon(icon: HugeIcons.strokeRoundedTimer02, size: 13, color: tagColor),
-                                      const SizedBox(width: 4),
-                                      Text(
-                                        formatDuration(_totalDuration),
-                                        style: AppTypography.caption.copyWith(color: tagColor),
-                                      ),
-                                    ],
-                                  ],
+                              ),
+                            ),
+                          ),
+                        ),
+                        Padding(
+                          padding: const EdgeInsets.only(right: 16),
+                          child: GestureDetector(
+                            onTap: () => _showEditTagDialog(context, tag),
+                            child: Container(
+                              width: 38,
+                              height: 38,
+                              decoration: GlassCard.card(radius: 12),
+                              child: const Center(
+                                child: HugeIcon(
+                                  icon: HugeIcons.strokeRoundedEdit01,
+                                  size: 18,
+                                  color: AppColors.textSecondary,
                                 ),
-                              ],
+                              ),
                             ),
                           ),
                         ),
                       ],
-                    ),
-                  ),
-                ),
-
-                // ── Action Buttons ───────────────────────────────────────────
-                if (_songs.isNotEmpty)
-                  SliverToBoxAdapter(
-                    child: Padding(
-                      padding: const EdgeInsets.fromLTRB(20, 8, 20, 16),
-                      child: Row(
-                        children: [
-                          Expanded(
-                            child: _ActionButton(
-                              label: 'Play All',
-                              icon: HugeIcons.strokeRoundedPlay,
-                              color: tagColor,
-                              onPressed: () =>
-                                   audioProvider.playFromTag(widget.tagId, _songs),
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: _ActionButton(
-                              label: 'Shuffle',
-                              icon: HugeIcons.strokeRoundedShuffle,
-                              color: AppColors.surfaceHigh,
-                              textColor: AppColors.textPrimary,
-                              onPressed: () =>
-                                  audioProvider.shuffleFromTag(widget.tagId, _songs),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-
-                // ── Song List ────────────────────────────────────────────────
-                if (_songs.isEmpty)
-                  SliverFillRemaining(
-                    child: Center(
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 32),
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            HugeIcon(icon: HugeIcons.strokeRoundedMusicNote01,
-                                size: 52, color: tagColor.withValues(alpha: 0.4)),
-                            const SizedBox(height: 16),
-                            Text('No songs in this tag', style: AppTypography.heading),
-                            const SizedBox(height: 8),
-                            Text(
-                              'Add songs to this tag to start listening',
-                              style: AppTypography.caption,
-                              textAlign: TextAlign.center,
-                            ),
-                            const SizedBox(height: 20),
-                            GestureDetector(
-                              onTap: () => _showAddSongsSheet(context, tag),
-                              child: Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                                decoration: GlassCard.accent(radius: 20, accentColor: tagColor),
-                                child: Row(
-                                  mainAxisSize: MainAxisSize.min,
+                      flexibleSpace: FlexibleSpaceBar(
+                        background: SafeArea(
+                          child: Padding(
+                            padding: const EdgeInsets.fromLTRB(20, 50, 20, 16),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              mainAxisAlignment: MainAxisAlignment.end,
+                              children: [
+                                Row(
                                   children: [
-                                    const HugeIcon(icon: HugeIcons.strokeRoundedAdd01, size: 18, color: Colors.white),
-                                    const SizedBox(width: 8),
-                                    Text(
-                                      'Add Songs',
-                                      style: AppTypography.bodyMedium.copyWith(
-                                        color: Colors.white,
-                                        fontWeight: FontWeight.w600,
+                                    Container(
+                                      width: 64,
+                                      height: 64,
+                                      decoration: BoxDecoration(
+                                        gradient: LinearGradient(
+                                          colors: [
+                                            tagColor.withValues(alpha: 0.35),
+                                            tagColor.withValues(alpha: 0.15),
+                                          ],
+                                          begin: Alignment.topLeft,
+                                          end: Alignment.bottomRight,
+                                        ),
+                                        borderRadius: BorderRadius.circular(20),
+                                        border: Border.all(
+                                          color: tagColor.withValues(alpha: 0.5),
+                                          width: 1.5,
+                                        ),
+                                        boxShadow: [
+                                          BoxShadow(
+                                            color: tagColor.withValues(alpha: 0.3),
+                                            blurRadius: 18,
+                                            offset: const Offset(0, 4),
+                                          ),
+                                        ],
+                                      ),
+                                      child: Center(
+                                        child: HugeIcon(
+                                          icon: HugeIcons.strokeRoundedTag01,
+                                          color: tagColor,
+                                          size: 32,
+                                        ),
+                                      ),
+                                    ),
+                                    const SizedBox(width: 16),
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            tag.name,
+                                            style: AppTypography.hero.copyWith(
+                                              fontSize: 26,
+                                              fontWeight: FontWeight.w800,
+                                            ),
+                                            maxLines: 1,
+                                            overflow: TextOverflow.ellipsis,
+                                          ),
+                                          const SizedBox(height: 6),
+                                          Row(
+                                            children: [
+                                              HugeIcon(
+                                                icon: HugeIcons.strokeRoundedMusicNote01,
+                                                size: 13,
+                                                color: tagColor,
+                                              ),
+                                              const SizedBox(width: 4),
+                                              Text(
+                                                '${_songs.length} ${_songs.length == 1 ? "song" : "songs"}',
+                                                style: AppTypography.caption.copyWith(
+                                                  color: Colors.white70,
+                                                  fontWeight: FontWeight.w600,
+                                                ),
+                                              ),
+                                              if (_songs.isNotEmpty) ...[
+                                                const SizedBox(width: 12),
+                                                Text(
+                                                  '•',
+                                                  style: AppTypography.caption.copyWith(
+                                                    color: AppColors.textDisabled,
+                                                  ),
+                                                ),
+                                                const SizedBox(width: 12),
+                                                HugeIcon(
+                                                  icon: HugeIcons.strokeRoundedTimer02,
+                                                  size: 13,
+                                                  color: tagColor,
+                                                ),
+                                                const SizedBox(width: 4),
+                                                Text(
+                                                  formatDuration(_totalDuration),
+                                                  style: AppTypography.caption.copyWith(
+                                                    color: Colors.white70,
+                                                    fontWeight: FontWeight.w600,
+                                                  ),
+                                                ),
+                                              ],
+                                            ],
+                                          ),
+                                        ],
                                       ),
                                     ),
                                   ],
                                 ),
-                              ),
+                              ],
                             ),
-                          ],
+                          ),
                         ),
                       ),
                     ),
-                  )
-                else
-                  SliverList(
-                    delegate: SliverChildBuilderDelegate(
-                      (context, index) {
-                        final song = _songs[index];
-                        return Dismissible(
-                          key: Key(song.id),
-                          direction: DismissDirection.endToStart,
-                          background: Container(
-                            alignment: Alignment.centerRight,
-                            padding: const EdgeInsets.only(right: 20),
-                            margin: const EdgeInsets.symmetric(
-                                horizontal: 12, vertical: 2),
-                            decoration: BoxDecoration(
-                              color: AppColors.secondary.withValues(alpha: 0.15),
-                              borderRadius: BorderRadius.circular(14),
-                            ),
-                            child: const HugeIcon(icon: HugeIcons.strokeRoundedRemoveCircle,
-                                color: AppColors.secondary),
-                          ),
-                          confirmDismiss: (direction) => _confirmRemove(context, song),
-                          onDismissed: (_) {
-                            context.read<TagProvider>().removeSongFromTag(song.id);
-                            setState(() => _songs.removeAt(index));
-                          },
-                          child: SongTile(
-                            song: song,
-                            index: index,
-                            isPlaying: audioProvider.currentSong?.id == song.id,
-                            onTap: () => audioProvider.playFromTag(
-                                widget.tagId, _songs,
-                                startIndex: index),
-                            onLongPress: () => _showSongOptions(context, song),
-                          ),
-                        );
-                      },
-                      childCount: _songs.length,
-                    ),
-                  ),
 
-                const SliverPadding(padding: EdgeInsets.only(bottom: 20)),
-              ],
-            ),
+                    // ── Action Buttons ───────────────────────────────────────
+                    if (_songs.isNotEmpty)
+                      SliverToBoxAdapter(
+                        child: Padding(
+                          padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+                          child: Row(
+                            children: [
+                              Expanded(
+                                child: _GlassTagActionButton(
+                                  label: 'Play All',
+                                  icon: HugeIcons.strokeRoundedPlay,
+                                  isPrimary: true,
+                                  accentColor: tagColor,
+                                  onPressed: () => audioProvider.playFromTag(
+                                    widget.tagId,
+                                    _songs,
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: _GlassTagActionButton(
+                                  label: 'Shuffle',
+                                  icon: HugeIcons.strokeRoundedShuffle,
+                                  isPrimary: false,
+                                  accentColor: tagColor,
+                                  onPressed: () => audioProvider.shuffleFromTag(
+                                    widget.tagId,
+                                    _songs,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+
+                    // ── Song List ────────────────────────────────────────────
+                    if (_songs.isEmpty)
+                      SliverFillRemaining(
+                        hasScrollBody: false,
+                        child: Center(
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 32),
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Container(
+                                  width: 80,
+                                  height: 80,
+                                  decoration: GlassCard.card(radius: 24),
+                                  child: Center(
+                                    child: HugeIcon(
+                                      icon: HugeIcons.strokeRoundedMusicNote01,
+                                      size: 40,
+                                      color: tagColor.withValues(alpha: 0.6),
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(height: 20),
+                                Text(
+                                  'No songs in this tag',
+                                  style: AppTypography.heading,
+                                ),
+                                const SizedBox(height: 8),
+                                Text(
+                                  'Add songs to this tag to build your custom vibe playlist',
+                                  style: AppTypography.caption,
+                                  textAlign: TextAlign.center,
+                                ),
+                                const SizedBox(height: 24),
+                                GestureDetector(
+                                  onTap: () => _showAddSongsSheet(context, tag),
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 24,
+                                      vertical: 14,
+                                    ),
+                                    decoration: GlassCard.accent(
+                                      radius: 20,
+                                      accentColor: tagColor,
+                                    ),
+                                    child: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        const HugeIcon(
+                                          icon: HugeIcons.strokeRoundedAdd01,
+                                          size: 18,
+                                          color: Colors.white,
+                                        ),
+                                        const SizedBox(width: 8),
+                                        Text(
+                                          'Add Songs',
+                                          style: AppTypography.bodyMedium.copyWith(
+                                            color: Colors.white,
+                                            fontWeight: FontWeight.w700,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      )
+                    else
+                      SliverList(
+                        delegate: SliverChildBuilderDelegate(
+                          (context, index) {
+                            final song = _songs[index];
+                            return Dismissible(
+                              key: Key(song.id),
+                              direction: DismissDirection.endToStart,
+                              background: Container(
+                                alignment: Alignment.centerRight,
+                                padding: const EdgeInsets.only(right: 20),
+                                margin: const EdgeInsets.symmetric(
+                                  horizontal: 14,
+                                  vertical: 3,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: AppColors.secondary.withValues(alpha: 0.2),
+                                  borderRadius: BorderRadius.circular(16),
+                                  border: Border.all(
+                                    color: AppColors.secondary.withValues(alpha: 0.4),
+                                  ),
+                                ),
+                                child: const HugeIcon(
+                                  icon: HugeIcons.strokeRoundedRemoveCircle,
+                                  color: AppColors.secondary,
+                                  size: 22,
+                                ),
+                              ),
+                              confirmDismiss: (_) => _confirmRemove(context, song),
+                              onDismissed: (_) {
+                                context
+                                    .read<TagProvider>()
+                                    .removeSongFromTag(song.id);
+                                setState(() => _songs.removeAt(index));
+                              },
+                              child: SongTile(
+                                song: song,
+                                index: index,
+                                isPlaying: audioProvider.currentSong?.id == song.id,
+                                onTap: () => audioProvider.playFromTag(
+                                  widget.tagId,
+                                  _songs,
+                                  startIndex: index,
+                                ),
+                                onLongPress: () => _showSongOptions(context, song),
+                              ),
+                            );
+                          },
+                          childCount: _songs.length,
+                        ),
+                      ),
+
+                    const SliverPadding(
+                      padding: EdgeInsets.only(bottom: 120),
+                    ),
+                  ],
+                ),
+        ],
+      ),
     );
   }
 
@@ -304,6 +469,7 @@ class _TagDetailPageState extends State<TagDetailPage> {
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
+      barrierColor: Colors.black.withValues(alpha: 0.65),
       builder: (sheetContext) => _AddSongsToTagSheet(
         tag: tag,
         onChanged: _loadSongs,
@@ -314,24 +480,43 @@ class _TagDetailPageState extends State<TagDetailPage> {
   Future<bool?> _confirmRemove(BuildContext context, Song song) {
     return showDialog<bool>(
       context: context,
-      builder: (context) => AlertDialog(
-        title: Text('Remove Song', style: AppTypography.heading),
-        content: Text(
-          'Remove "${song.title}" from this tag?',
-          style: AppTypography.body.copyWith(color: AppColors.textSecondary),
+      barrierColor: Colors.black.withValues(alpha: 0.6),
+      builder: (context) => ClipRRect(
+        borderRadius: BorderRadius.circular(24),
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+          child: AlertDialog(
+            backgroundColor: AppColors.surfaceHigh.withValues(alpha: 0.92),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(24),
+              side: const BorderSide(color: AppColors.glassBorderStrong, width: 1),
+            ),
+            title: Text('Remove Song', style: AppTypography.heading),
+            content: Text(
+              'Remove "${song.title}" from this tag?',
+              style: AppTypography.body.copyWith(color: AppColors.textSecondary),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context, false),
+                child: Text(
+                  'Cancel',
+                  style: AppTypography.body.copyWith(color: AppColors.textSecondary),
+                ),
+              ),
+              TextButton(
+                onPressed: () => Navigator.pop(context, true),
+                child: Text(
+                  'Remove',
+                  style: AppTypography.body.copyWith(
+                    color: AppColors.secondary,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: Text('Cancel',
-                style: AppTypography.body.copyWith(color: AppColors.textSecondary)),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: Text('Remove',
-                style: AppTypography.body.copyWith(color: AppColors.secondary)),
-          ),
-        ],
       ),
     );
   }
@@ -339,49 +524,74 @@ class _TagDetailPageState extends State<TagDetailPage> {
   void _showSongOptions(BuildContext context, Song song) {
     showModalBottomSheet(
       context: context,
-      backgroundColor: AppColors.surfaceHigh,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
-      ),
-      builder: (context) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              width: 40,
-              height: 4,
-              margin: const EdgeInsets.only(top: 12, bottom: 16),
-              decoration: BoxDecoration(
-                color: AppColors.surfaceBorder,
-                borderRadius: BorderRadius.circular(2),
+      backgroundColor: Colors.transparent,
+      barrierColor: Colors.black.withValues(alpha: 0.65),
+      builder: (context) => ClipRRect(
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 25, sigmaY: 25),
+          child: Container(
+            decoration: BoxDecoration(
+              color: AppColors.surfaceHigh.withValues(alpha: 0.92),
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+              border: Border.all(color: AppColors.glassBorderStrong, width: 1),
+            ),
+            child: SafeArea(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    width: 40,
+                    height: 4,
+                    margin: const EdgeInsets.only(top: 12, bottom: 16),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.2),
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                    child: Text(
+                      song.title,
+                      style: AppTypography.heading,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  ListTile(
+                    leading: Container(
+                      width: 40,
+                      height: 40,
+                      decoration: GlassCard.card(radius: 12),
+                      child: const Center(
+                        child: HugeIcon(
+                          icon: HugeIcons.strokeRoundedRemoveCircle,
+                          color: AppColors.secondary,
+                          size: 20,
+                        ),
+                      ),
+                    ),
+                    title: Text(
+                      'Remove from tag',
+                      style: AppTypography.body.copyWith(
+                        color: AppColors.secondary,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    onTap: () {
+                      Navigator.pop(context);
+                      context
+                          .read<TagProvider>()
+                          .removeSongFromTag(song.id);
+                      _loadSongs();
+                    },
+                  ),
+                  const SizedBox(height: 16),
+                ],
               ),
             ),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20),
-              child: Text(song.title,
-                  style: AppTypography.heading,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis),
-            ),
-            const SizedBox(height: 16),
-            ListTile(
-              leading: Container(
-                width: 40,
-                height: 40,
-                decoration: GlassCard.card(radius: 12),
-                child: const HugeIcon(icon: HugeIcons.strokeRoundedRemoveCircle,
-                    color: AppColors.secondary, size: 20),
-              ),
-              title: Text('Remove from tag',
-                  style: AppTypography.body.copyWith(color: AppColors.secondary)),
-              onTap: () {
-                Navigator.pop(context);
-                context.read<TagProvider>().removeSongFromTag(song.id);
-                _loadSongs();
-              },
-            ),
-            const SizedBox(height: 16),
-          ],
+          ),
         ),
       ),
     );
@@ -393,54 +603,76 @@ class _TagDetailPageState extends State<TagDetailPage> {
 
     showDialog(
       context: context,
+      barrierColor: Colors.black.withValues(alpha: 0.6),
       builder: (dialogContext) => StatefulBuilder(
-        builder: (dialogContext, setState) => AlertDialog(
-          title: Text('Edit Tag', style: AppTypography.heading),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(
-                controller: nameController,
-                style: AppTypography.body,
-                decoration: InputDecoration(
-                  hintText: 'Tag name',
-                  hintStyle: AppTypography.caption,
-                  enabledBorder: UnderlineInputBorder(
-                    borderSide: BorderSide(color: AppColors.surfaceBorder),
+        builder: (dialogContext, setDialogState) => ClipRRect(
+          borderRadius: BorderRadius.circular(24),
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+            child: AlertDialog(
+              backgroundColor: AppColors.surfaceHigh.withValues(alpha: 0.94),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(24),
+                side: const BorderSide(color: AppColors.glassBorderStrong, width: 1),
+              ),
+              title: Text('Edit Tag', style: AppTypography.heading),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  TextField(
+                    controller: nameController,
+                    style: AppTypography.body,
+                    decoration: InputDecoration(
+                      hintText: 'Tag name',
+                      hintStyle: AppTypography.caption,
+                      enabledBorder: const UnderlineInputBorder(
+                        borderSide: BorderSide(color: AppColors.glassBorder),
+                      ),
+                      focusedBorder: const UnderlineInputBorder(
+                        borderSide: BorderSide(color: AppColors.primary),
+                      ),
+                    ),
                   ),
-                  focusedBorder: const UnderlineInputBorder(
-                    borderSide: BorderSide(color: AppColors.primary),
+                  const SizedBox(height: 20),
+                  _buildColorPicker(
+                    selectedColor,
+                    (c) => setDialogState(() => selectedColor = c),
+                  ),
+                ],
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () {
+                    FocusManager.instance.primaryFocus?.unfocus();
+                    Navigator.pop(dialogContext);
+                  },
+                  child: Text(
+                    'Cancel',
+                    style: AppTypography.body.copyWith(color: AppColors.textSecondary),
                   ),
                 ),
-              ),
-              const SizedBox(height: 20),
-              _buildColorPicker(selectedColor, (c) => setState(() => selectedColor = c)),
-            ],
+                TextButton(
+                  onPressed: () {
+                    final trimmed = nameController.text.trim();
+                    if (trimmed.isNotEmpty) {
+                      FocusManager.instance.primaryFocus?.unfocus();
+                      context
+                          .read<TagProvider>()
+                          .updateTag(tag.id, trimmed, selectedColor);
+                      Navigator.pop(dialogContext);
+                    }
+                  },
+                  child: Text(
+                    'Save',
+                    style: AppTypography.body.copyWith(
+                      color: AppColors.primary,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
-          actions: [
-            TextButton(
-              onPressed: () {
-                FocusManager.instance.primaryFocus?.unfocus();
-                Navigator.pop(dialogContext);
-              },
-              child: Text('Cancel',
-                  style: AppTypography.body.copyWith(color: AppColors.textSecondary)),
-            ),
-            TextButton(
-              onPressed: () {
-                final trimmed = nameController.text.trim();
-                if (trimmed.isNotEmpty) {
-                  FocusManager.instance.primaryFocus?.unfocus();
-                  context
-                      .read<TagProvider>()
-                      .updateTag(tag.id, trimmed, selectedColor);
-                  Navigator.pop(dialogContext);
-                }
-              },
-              child: Text('Save',
-                  style: AppTypography.body.copyWith(color: AppColors.primary)),
-            ),
-          ],
         ),
       ),
     );
@@ -458,25 +690,39 @@ class _TagDetailPageState extends State<TagDetailPage> {
       const Color(0xFF98FB98).toARGB32(),
     ];
     return Wrap(
-      spacing: 10,
-      runSpacing: 10,
+      spacing: 12,
+      runSpacing: 12,
       children: colors.map((color) {
         final isSelected = color == selectedColor;
         return GestureDetector(
           onTap: () => onColorSelected(color),
           child: AnimatedContainer(
-            duration: const Duration(milliseconds: 150),
-            width: 36,
-            height: 36,
+            duration: const Duration(milliseconds: 180),
+            width: 38,
+            height: 38,
             decoration: BoxDecoration(
               color: Color(color),
               shape: BoxShape.circle,
               border: isSelected ? Border.all(color: Colors.white, width: 2.5) : null,
               boxShadow: isSelected
-                  ? [BoxShadow(color: Color(color).withValues(alpha: 0.5), blurRadius: 10)]
+                  ? [
+                      BoxShadow(
+                        color: Color(color).withValues(alpha: 0.6),
+                        blurRadius: 12,
+                        spreadRadius: 1,
+                      )
+                    ]
                   : null,
             ),
-            child: isSelected ? const HugeIcon(icon: HugeIcons.strokeRoundedTick01, size: 16, color: Colors.white) : null,
+            child: isSelected
+                ? const Center(
+                    child: HugeIcon(
+                      icon: HugeIcons.strokeRoundedTick01,
+                      size: 18,
+                      color: Colors.white,
+                    ),
+                  )
+                : null,
           ),
         );
       }).toList(),
@@ -558,236 +804,337 @@ class _AddSongsToTagSheetState extends State<_AddSongsToTagSheet> {
                 s.artist.toLowerCase().contains(q);
           }).toList();
 
-    return Container(
-      height: MediaQuery.of(context).size.height * 0.75,
-      decoration: const BoxDecoration(
-        color: AppColors.surfaceHigh,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
-      ),
-      child: Column(
-        children: [
-          // Handle
-          Container(
-            width: 40,
-            height: 4,
-            margin: const EdgeInsets.only(top: 12, bottom: 14),
-            decoration: BoxDecoration(
-              color: AppColors.surfaceBorder,
-              borderRadius: BorderRadius.circular(2),
-            ),
+    return ClipRRect(
+      borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 30, sigmaY: 30),
+        child: Container(
+          height: MediaQuery.of(context).size.height * 0.75,
+          decoration: BoxDecoration(
+            color: AppColors.background.withValues(alpha: 0.90),
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
+            border: Border.all(color: AppColors.glassBorderStrong, width: 1),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.5),
+                blurRadius: 30,
+                offset: const Offset(0, -6),
+              ),
+            ],
           ),
-          // Header
-          Padding(
-            padding: const EdgeInsets.fromLTRB(20, 0, 20, 12),
-            child: Row(
-              children: [
-                Container(
-                  width: 40,
-                  height: 40,
-                  decoration: BoxDecoration(
-                    color: tagColor.withValues(alpha: 0.2),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: HugeIcon(icon: HugeIcons.strokeRoundedTag01, color: tagColor, size: 20),
+          child: Column(
+            children: [
+              // Handle
+              Container(
+                width: 44,
+                height: 4.5,
+                margin: const EdgeInsets.only(top: 14, bottom: 14),
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.25),
+                  borderRadius: BorderRadius.circular(3),
                 ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text('Add Songs to Tag', style: AppTypography.heading),
-                      Text(
-                        widget.tag.name,
-                        style: AppTypography.caption.copyWith(color: tagColor, fontWeight: FontWeight.w600),
+              ),
+              // Header
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 0, 20, 14),
+                child: Row(
+                  children: [
+                    Container(
+                      width: 42,
+                      height: 42,
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: [
+                            tagColor.withValues(alpha: 0.35),
+                            tagColor.withValues(alpha: 0.15),
+                          ],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        ),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                          color: tagColor.withValues(alpha: 0.4),
+                          width: 1,
+                        ),
                       ),
+                      child: Center(
+                        child: HugeIcon(
+                          icon: HugeIcons.strokeRoundedTag01,
+                          color: tagColor,
+                          size: 20,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 14),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text('Add Songs to Tag', style: AppTypography.heading),
+                          const SizedBox(height: 2),
+                          Text(
+                            widget.tag.name,
+                            style: AppTypography.caption.copyWith(
+                              color: tagColor,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 4,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.08),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: AppColors.glassBorder),
+                      ),
+                      child: Text(
+                        '${_assignedSongIds.length} added',
+                        style: AppTypography.caption.copyWith(
+                          color: Colors.white70,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              // Search input
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                child: Container(
+                  height: 44,
+                  decoration: GlassCard.card(radius: 14),
+                  padding: const EdgeInsets.symmetric(horizontal: 14),
+                  child: Row(
+                    children: [
+                      const HugeIcon(
+                        icon: HugeIcons.strokeRoundedSearch01,
+                        size: 18,
+                        color: AppColors.textDisabled,
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: TextField(
+                          controller: _searchController,
+                          autofocus: false,
+                          style: AppTypography.body.copyWith(fontSize: 14),
+                          decoration: InputDecoration(
+                            hintText: 'Filter songs...',
+                            hintStyle: AppTypography.caption.copyWith(fontSize: 13),
+                            border: InputBorder.none,
+                            isDense: true,
+                            contentPadding: EdgeInsets.zero,
+                          ),
+                          onChanged: (val) => setState(() => _searchQuery = val),
+                        ),
+                      ),
+                      if (_searchQuery.isNotEmpty)
+                        GestureDetector(
+                          onTap: () {
+                            _searchController.clear();
+                            setState(() => _searchQuery = '');
+                          },
+                          child: const HugeIcon(
+                            icon: HugeIcons.strokeRoundedCancel01,
+                            size: 16,
+                            color: AppColors.textSecondary,
+                          ),
+                        ),
                     ],
                   ),
                 ),
-                Text(
-                  '${_assignedSongIds.length} added',
-                  style: AppTypography.caption.copyWith(color: AppColors.textSecondary),
-                ),
-              ],
-            ),
-          ),
-          // Search input (autofocus is FALSE so keyboard never pops automatically)
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-            child: Container(
-              height: 42,
-              decoration: GlassCard.card(radius: 12),
-              padding: const EdgeInsets.symmetric(horizontal: 12),
-              child: Row(
-                children: [
-                  const HugeIcon(icon: HugeIcons.strokeRoundedSearch01, size: 16, color: AppColors.textDisabled),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: TextField(
-                      controller: _searchController,
-                      autofocus: false,
-                      style: AppTypography.body.copyWith(fontSize: 13),
-                      decoration: InputDecoration(
-                        hintText: 'Filter songs...',
-                        hintStyle: AppTypography.caption.copyWith(fontSize: 13),
-                        border: InputBorder.none,
-                        isDense: true,
-                        contentPadding: EdgeInsets.zero,
-                      ),
-                      onChanged: (val) => setState(() => _searchQuery = val),
+              ),
+              const SizedBox(height: 8),
+              const Divider(height: 1, color: AppColors.glassBorder),
+              // Song list
+              if (_isLoading)
+                const Expanded(
+                  child: Center(
+                    child: CircularProgressIndicator(
+                      color: AppColors.primary,
+                      strokeWidth: 2,
                     ),
                   ),
-                  if (_searchQuery.isNotEmpty)
-                    GestureDetector(
-                      onTap: () {
-                        _searchController.clear();
-                        setState(() => _searchQuery = '');
-                      },
-                      child: const HugeIcon(icon: HugeIcons.strokeRoundedCancel01, size: 16, color: AppColors.textSecondary),
+                )
+              else if (filteredSongs.isEmpty)
+                Expanded(
+                  child: Center(
+                    child: Text(
+                      _searchQuery.isEmpty
+                          ? 'No songs in your library'
+                          : 'No matching songs found',
+                      style: AppTypography.caption,
                     ),
-                ],
-              ),
-            ),
-          ),
-          const SizedBox(height: 8),
-          Divider(height: 1, color: AppColors.divider),
-          // Song list
-          if (_isLoading)
-            const Expanded(
-              child: Center(
-                child: CircularProgressIndicator(color: AppColors.primary, strokeWidth: 2),
-              ),
-            )
-          else if (filteredSongs.isEmpty)
-            Expanded(
-              child: Center(
-                child: Text(
-                  _searchQuery.isEmpty ? 'No songs in your library' : 'No matching songs found',
-                  style: AppTypography.caption,
-                ),
-              ),
-            )
-          else
-            Expanded(
-              child: ListView.builder(
-                padding: const EdgeInsets.symmetric(vertical: 6),
-                itemCount: filteredSongs.length,
-                itemBuilder: (context, index) {
-                  final song = filteredSongs[index];
-                  final isAssigned = _assignedSongIds.contains(song.id);
+                  ),
+                )
+              else
+                Expanded(
+                  child: ListView.builder(
+                    padding: const EdgeInsets.symmetric(vertical: 8),
+                    itemCount: filteredSongs.length,
+                    itemBuilder: (context, index) {
+                      final song = filteredSongs[index];
+                      final isAssigned = _assignedSongIds.contains(song.id);
 
-                  return Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 3),
-                    child: GestureDetector(
-                      onTap: () => _toggleSong(song),
-                      child: AnimatedContainer(
-                        duration: const Duration(milliseconds: 150),
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                        decoration: BoxDecoration(
-                          color: isAssigned
-                              ? tagColor.withValues(alpha: 0.15)
-                              : AppColors.surface,
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(
-                            color: isAssigned
-                                ? tagColor.withValues(alpha: 0.4)
-                                : Colors.transparent,
-                            width: 1,
+                      return Padding(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 4,
+                        ),
+                        child: GestureDetector(
+                          onTap: () => _toggleSong(song),
+                          child: AnimatedContainer(
+                            duration: const Duration(milliseconds: 180),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 14,
+                              vertical: 10,
+                            ),
+                            decoration: isAssigned
+                                ? BoxDecoration(
+                                    gradient: LinearGradient(
+                                      colors: [
+                                        tagColor.withValues(alpha: 0.28),
+                                        tagColor.withValues(alpha: 0.14),
+                                      ],
+                                      begin: Alignment.topLeft,
+                                      end: Alignment.bottomRight,
+                                    ),
+                                    borderRadius: BorderRadius.circular(14),
+                                    border: Border.all(
+                                      color: tagColor.withValues(alpha: 0.6),
+                                      width: 1.2,
+                                    ),
+                                  )
+                                : GlassCard.card(radius: 14),
+                            child: Row(
+                              children: [
+                                Container(
+                                  width: 38,
+                                  height: 38,
+                                  decoration: BoxDecoration(
+                                    color: isAssigned
+                                        ? tagColor.withValues(alpha: 0.35)
+                                        : Colors.white.withValues(alpha: 0.08),
+                                    borderRadius: BorderRadius.circular(10),
+                                  ),
+                                  child: Center(
+                                    child: HugeIcon(
+                                      icon: isAssigned
+                                          ? HugeIcons.strokeRoundedCheckmarkCircle01
+                                          : HugeIcons.strokeRoundedMusicNote01,
+                                      size: 18,
+                                      color: isAssigned
+                                          ? tagColor
+                                          : AppColors.textSecondary,
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        song.title,
+                                        style: AppTypography.bodyMedium.copyWith(
+                                          fontWeight: isAssigned
+                                              ? FontWeight.w700
+                                              : FontWeight.w500,
+                                          color: isAssigned
+                                              ? Colors.white
+                                              : AppColors.textPrimary,
+                                        ),
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                      const SizedBox(height: 2),
+                                      Text(
+                                        song.artist.isEmpty
+                                            ? 'Unknown Artist'
+                                            : song.artist,
+                                        style: AppTypography.caption.copyWith(
+                                          fontSize: 11,
+                                          color: isAssigned
+                                              ? Colors.white70
+                                              : AppColors.textSecondary,
+                                        ),
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                AnimatedContainer(
+                                  duration: const Duration(milliseconds: 180),
+                                  width: 28,
+                                  height: 28,
+                                  decoration: BoxDecoration(
+                                    shape: BoxShape.circle,
+                                    color: isAssigned
+                                        ? tagColor
+                                        : Colors.transparent,
+                                    border: Border.all(
+                                      color: isAssigned
+                                          ? tagColor
+                                          : AppColors.textDisabled,
+                                      width: 1.5,
+                                    ),
+                                    boxShadow: isAssigned
+                                        ? [
+                                            BoxShadow(
+                                              color: tagColor.withValues(alpha: 0.5),
+                                              blurRadius: 8,
+                                            ),
+                                          ]
+                                        : null,
+                                  ),
+                                  child: isAssigned
+                                      ? const Center(
+                                          child: HugeIcon(
+                                            icon: HugeIcons.strokeRoundedTick01,
+                                            size: 14,
+                                            color: Colors.white,
+                                          ),
+                                        )
+                                      : null,
+                                ),
+                              ],
+                            ),
                           ),
                         ),
-                        child: Row(
-                          children: [
-                            Container(
-                              width: 36,
-                              height: 36,
-                              decoration: BoxDecoration(
-                                color: isAssigned
-                                    ? tagColor.withValues(alpha: 0.25)
-                                    : AppColors.surfaceHigh,
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              child: HugeIcon(
-                                icon: isAssigned
-                                    ? HugeIcons.strokeRoundedCheckmarkCircle01
-                                    : HugeIcons.strokeRoundedMusicNote01,
-                                size: 18,
-                                color: isAssigned ? tagColor : AppColors.textSecondary,
-                              ),
-                            ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    song.title,
-                                    style: AppTypography.bodyMedium.copyWith(
-                                      fontWeight: isAssigned ? FontWeight.w600 : FontWeight.w500,
-                                      color: isAssigned ? AppColors.textPrimary : AppColors.textPrimary,
-                                    ),
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                                  Text(
-                                    song.artist.isEmpty ? 'Unknown Artist' : song.artist,
-                                    style: AppTypography.caption.copyWith(
-                                      fontSize: 11,
-                                      color: AppColors.textSecondary,
-                                    ),
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                                ],
-                              ),
-                            ),
-                            const SizedBox(width: 8),
-                            AnimatedContainer(
-                              duration: const Duration(milliseconds: 150),
-                              width: 28,
-                              height: 28,
-                              decoration: BoxDecoration(
-                                shape: BoxShape.circle,
-                                color: isAssigned ? tagColor : Colors.transparent,
-                                border: Border.all(
-                                  color: isAssigned ? tagColor : AppColors.textDisabled,
-                                  width: 1.5,
-                                ),
-                              ),
-                              child: isAssigned
-                                  ? const HugeIcon(
-                                      icon: HugeIcons.strokeRoundedTick01,
-                                      size: 14,
-                                      color: Colors.white,
-                                    )
-                                  : null,
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  );
-                },
-              ),
-            ),
-        ],
+                      );
+                    },
+                  ),
+                ),
+            ],
+          ),
+        ),
       ),
     );
   }
 }
 
-// ── Action Button ─────────────────────────────────────────────────────────────
+// ── Glass Action Button ───────────────────────────────────────────────────────
 
-class _ActionButton extends StatelessWidget {
+class _GlassTagActionButton extends StatelessWidget {
   final String label;
   final dynamic icon;
-  final Color color;
-  final Color textColor;
+  final bool isPrimary;
+  final Color accentColor;
   final VoidCallback? onPressed;
 
-  const _ActionButton({
+  const _GlassTagActionButton({
     required this.label,
     required this.icon,
-    required this.color,
-    this.textColor = Colors.white,
+    required this.isPrimary,
+    required this.accentColor,
     this.onPressed,
   });
 
@@ -797,20 +1144,24 @@ class _ActionButton extends StatelessWidget {
       onTap: onPressed,
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 14),
-        decoration: BoxDecoration(
-          color: color,
-          borderRadius: BorderRadius.circular(14),
-        ),
+        decoration: isPrimary
+            ? GlassCard.accent(radius: 16, accentColor: accentColor)
+            : GlassCard.card(radius: 16),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            HugeIcon(icon: icon, size: 20, color: textColor),
+            HugeIcon(
+              icon: icon,
+              size: 18,
+              color: isPrimary ? Colors.white : AppColors.textPrimary,
+            ),
             const SizedBox(width: 8),
             Text(
               label,
               style: AppTypography.bodyMedium.copyWith(
-                color: textColor,
+                color: isPrimary ? Colors.white : AppColors.textPrimary,
                 fontWeight: FontWeight.w700,
+                letterSpacing: 0.2,
               ),
             ),
           ],
@@ -819,4 +1170,3 @@ class _ActionButton extends StatelessWidget {
     );
   }
 }
-

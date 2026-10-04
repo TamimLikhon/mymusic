@@ -28,6 +28,8 @@ class SystemMediaSessionAdapter {
     } on MissingPluginException {
       // A page-only stream remains usable if the native adapter is unavailable.
       _channel.setMethodCallHandler(null);
+    } catch (_) {
+      _channel.setMethodCallHandler(null);
     }
   }
 

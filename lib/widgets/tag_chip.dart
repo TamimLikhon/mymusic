@@ -1,3 +1,4 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:hugeicons/hugeicons.dart';
 import '../core/theme/app_typography.dart';
@@ -24,32 +25,57 @@ class TagChip extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
         decoration: BoxDecoration(
-          color: chipColor.withValues(alpha: 0.12),
+          gradient: LinearGradient(
+            colors: [
+              chipColor.withValues(alpha: 0.22),
+              chipColor.withValues(alpha: 0.08),
+            ],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
-            color: chipColor.withValues(alpha: 0.30),
+            color: chipColor.withValues(alpha: 0.35),
             width: 1,
           ),
+          boxShadow: [
+            BoxShadow(
+              color: chipColor.withValues(alpha: 0.12),
+              blurRadius: 10,
+              offset: const Offset(0, 2),
+            ),
+          ],
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            HugeIcon(icon: HugeIcons.strokeRoundedTag01, size: 13, color: chipColor),
+            HugeIcon(
+              icon: HugeIcons.strokeRoundedTag01,
+              size: 13,
+              color: chipColor,
+            ),
             const SizedBox(width: 6),
             Text(
               name,
               style: AppTypography.body.copyWith(
                 fontSize: 12,
                 fontWeight: FontWeight.w600,
-                color: chipColor,
+                color: Colors.white.withValues(alpha: 0.95),
               ),
             ),
             const SizedBox(width: 6),
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+              padding: const EdgeInsets.symmetric(
+                horizontal: 6,
+                vertical: 1.5,
+              ),
               decoration: BoxDecoration(
-                color: chipColor.withValues(alpha: 0.20),
+                color: chipColor.withValues(alpha: 0.25),
                 borderRadius: BorderRadius.circular(10),
+                border: Border.all(
+                  color: chipColor.withValues(alpha: 0.35),
+                  width: 0.5,
+                ),
               ),
               child: Text(
                 '$songCount',

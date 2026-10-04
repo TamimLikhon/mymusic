@@ -14,6 +14,7 @@ class SongTile extends StatefulWidget {
   final VoidCallback? onLongPress;
   final int? index;
   final bool isPlaying;
+  final Widget? trailing;
 
   const SongTile({
     super.key,
@@ -22,14 +23,14 @@ class SongTile extends StatefulWidget {
     this.onLongPress,
     this.index,
     this.isPlaying = false,
+    this.trailing,
   });
 
   @override
   State<SongTile> createState() => _SongTileState();
 }
 
-class _SongTileState extends State<SongTile>
-    with SingleTickerProviderStateMixin {
+class _SongTileState extends State<SongTile> {
   bool _isPressed = false;
 
   @override
@@ -37,107 +38,161 @@ class _SongTileState extends State<SongTile>
     final colors = AppColors.seedGradient(widget.song.title);
     final isPlaying = widget.isPlaying;
 
-    return GestureDetector(
-      onTapDown: (_) => setState(() => _isPressed = true),
-      onTapUp: (_) {
-        setState(() => _isPressed = false);
-        widget.onTap?.call();
-      },
-      onTapCancel: () => setState(() => _isPressed = false),
-      onLongPress: widget.onLongPress,
-      child: AnimatedScale(
-        scale: _isPressed ? 0.97 : 1.0,
-        duration: const Duration(milliseconds: 150),
-        curve: Curves.easeInOut,
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 150),
-          margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-          decoration: BoxDecoration(
-            color: _isPressed
-                ? AppColors.surface
-                : isPlaying
-                ? AppColors.primaryFaint
-                : Colors.transparent,
-            borderRadius: BorderRadius.circular(14),
-            border: isPlaying
-                ? Border.all(
-                    color: AppColors.primary.withValues(alpha: 0.3),
-                    width: 1,
-                  )
-                : null,
-          ),
-          child: Row(
-            children: [
-            // Index or playing dot
-            if (widget.index != null)
-              SizedBox(
-                width: 28,
-                child: isPlaying
-                    ? Center(
-                        child: Container(
-                          width: 6,
-                          height: 6,
-                          decoration: const BoxDecoration(
-                            color: AppColors.primary,
-                            shape: BoxShape.circle,
-                          ),
-                        ),
-                      )
-                    : Text(
-                        '${widget.index! + 1}',
-                        style: AppTypography.caption.copyWith(
-                          fontSize: 11,
-                          color: AppColors.textDisabled,
-                        ),
-                        textAlign: TextAlign.center,
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 3),
+      child: GestureDetector(
+        onTapDown: (_) => setState(() => _isPressed = true),
+        onTapUp: (_) {
+          setState(() => _isPressed = false);
+          widget.onTap?.call();
+        },
+        onTapCancel: () => setState(() => _isPressed = false),
+        onLongPress: widget.onLongPress,
+        child: AnimatedScale(
+          scale: _isPressed ? 0.98 : 1.0,
+          duration: const Duration(milliseconds: 140),
+          curve: Curves.easeOutCubic,
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 220),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            decoration: BoxDecoration(
+              color: _isPressed
+                  ? AppColors.glassFillStrong
+                  : isPlaying
+                      ? AppColors.primary.withValues(alpha: 0.14)
+                      : AppColors.glassFill,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(
+                color: isPlaying
+                    ? AppColors.primary.withValues(alpha: 0.6)
+                    : _isPressed
+                        ? AppColors.glassBorderStrong
+                        : AppColors.glassBorder,
+                width: isPlaying ? 1.2 : 0.8,
+              ),
+              boxShadow: isPlaying
+                  ? [
+                      BoxShadow(
+                        color: AppColors.primary.withValues(alpha: 0.22),
+                        blurRadius: 18,
+                        spreadRadius: 1,
+                        offset: const Offset(0, 4),
                       ),
-              ),
-            // Art thumbnail
-            SongArtWidget(
-              song: widget.song,
-              colors: colors,
-              isPlaying: isPlaying,
+                    ]
+                  : [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.2),
+                        blurRadius: 8,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
             ),
-            const SizedBox(width: 12),
-            // Song info
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    widget.song.title,
-                    style: AppTypography.bodyMedium.copyWith(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
-                      color: isPlaying
-                          ? AppColors.primary
-                          : AppColors.textPrimary,
+            child: Row(
+              children: [
+                // Index or glowing playing indicator
+                if (widget.index != null)
+                  SizedBox(
+                    width: 28,
+                    child: isPlaying
+                        ? Center(
+                            child: Container(
+                              width: 8,
+                              height: 8,
+                              decoration: BoxDecoration(
+                                color: AppColors.primaryLight,
+                                shape: BoxShape.circle,
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: AppColors.primary.withValues(alpha: 0.9),
+                                    blurRadius: 10,
+                                    spreadRadius: 2,
+                                  ),
+                                ],
+                              ),
+                            ),
+                          )
+                        : Text(
+                            '${widget.index! + 1}',
+                            style: AppTypography.caption.copyWith(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                              color: AppColors.textDisabled,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                  ),
+
+                // Art thumbnail
+                SongArtWidget(
+                  song: widget.song,
+                  colors: colors,
+                  isPlaying: isPlaying,
+                ),
+                const SizedBox(width: 12),
+
+                // Song info
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        widget.song.title,
+                        style: AppTypography.bodyMedium.copyWith(
+                          fontSize: 14,
+                          fontWeight: isPlaying ? FontWeight.w700 : FontWeight.w600,
+                          color: isPlaying
+                              ? AppColors.primaryLight
+                              : AppColors.textPrimary,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      const SizedBox(height: 3),
+                      Text(
+                        widget.song.artist.isNotEmpty
+                            ? widget.song.artist
+                            : 'Unknown Artist',
+                        style: AppTypography.caption.copyWith(
+                          fontSize: 12,
+                          color: isPlaying
+                              ? AppColors.textSecondary
+                              : AppColors.textDisabled,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 10),
+
+                // Trailing duration, bars or custom widget
+                if (widget.trailing != null)
+                  widget.trailing!
+                else if (isPlaying)
+                  Padding(
+                    padding: const EdgeInsets.only(right: 4),
+                    child: AnimatedBars(
+                      isPlaying: true,
+                      width: 16,
+                      height: 14,
+                      color: AppColors.primaryLight,
                     ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  const SizedBox(height: 2),
+                  )
+                else
                   Text(
-                    widget.song.artist,
-                    style: AppTypography.caption,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
+                    formatDuration(widget.song.duration),
+                    style: AppTypography.caption.copyWith(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w500,
+                      color: AppColors.textDisabled,
+                    ),
                   ),
-                ],
-              ),
+              ],
             ),
-            const SizedBox(width: 8),
-            Text(
-              formatDuration(widget.song.duration),
-              style: AppTypography.caption.copyWith(
-                fontSize: 11,
-                color: AppColors.textDisabled,
-              ),
-            ),
-          ],
+          ),
         ),
-      ),
       ),
     );
   }
@@ -182,14 +237,12 @@ class _SongArtWidgetState extends State<SongArtWidget> {
   }
 
   void _loadImage() {
-    // Prefer custom art set by user
     final customArt = widget.song.custom_art_path;
-    if (customArt != null) {
-      _imageFuture = Future.value(File(customArt).readAsBytesSync());
+    if (customArt != null && File(customArt).existsSync()) {
+      _imageFuture = File(customArt).readAsBytes();
       return;
     }
 
-    // Fallback: read embedded metadata art in a background isolate
     final filePath = widget.song.file_path;
     _imageFuture = compute((path) {
       try {
@@ -220,26 +273,37 @@ class _SongArtWidgetState extends State<SongArtWidget> {
           end: Alignment.bottomRight,
         ),
         borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: isPlaying
+              ? AppColors.primary.withValues(alpha: 0.8)
+              : Colors.white.withValues(alpha: 0.18),
+          width: 1,
+        ),
         boxShadow: isPlaying
             ? [
                 BoxShadow(
-                  color: colors[0].withValues(alpha: 0.5),
-                  blurRadius: 12,
+                  color: colors[0].withValues(alpha: 0.45),
+                  blurRadius: 14,
                   offset: const Offset(0, 4),
                 ),
               ]
-            : null,
+            : [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.25),
+                  blurRadius: 6,
+                  offset: const Offset(0, 2),
+                ),
+              ],
       ),
       child: FutureBuilder<Uint8List?>(
         future: _imageFuture,
         builder: (context, snapshot) {
           if (snapshot.hasData && snapshot.data != null) {
-            // Show actual art image
             return Stack(
               fit: StackFit.expand,
               children: [
                 ClipRRect(
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(11),
                   child: Image.memory(
                     snapshot.data!,
                     fit: BoxFit.cover,
@@ -247,17 +311,16 @@ class _SongArtWidgetState extends State<SongArtWidget> {
                     gaplessPlayback: true,
                   ),
                 ),
-                // Playing overlay
                 if (isPlaying)
                   ClipRRect(
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(11),
                     child: Container(
                       color: Colors.black.withValues(alpha: 0.45),
                       child: Center(
                         child: AnimatedBars(
                           isPlaying: true,
-                          width: 20,
-                          height: 20,
+                          width: 18,
+                          height: 18,
                           color: Colors.white.withValues(alpha: 0.95),
                         ),
                       ),
@@ -267,21 +330,20 @@ class _SongArtWidgetState extends State<SongArtWidget> {
             );
           }
 
-          // Fallback: gradient + letter / animated bars
           return Center(
             child: isPlaying
                 ? AnimatedBars(
                     isPlaying: true,
-                    width: 20,
-                    height: 20,
-                    color: Colors.white.withValues(alpha: 0.9),
+                    width: 18,
+                    height: 18,
+                    color: Colors.white.withValues(alpha: 0.95),
                   )
                 : Text(
                     widget.song.title.isNotEmpty
                         ? widget.song.title[0].toUpperCase()
                         : '♪',
                     style: AppTypography.heading.copyWith(
-                      color: Colors.white.withValues(alpha: 0.9),
+                      color: Colors.white.withValues(alpha: 0.95),
                       fontWeight: FontWeight.w800,
                       fontSize: 18,
                     ),

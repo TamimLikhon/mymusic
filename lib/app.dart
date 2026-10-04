@@ -1,3 +1,5 @@
+import 'dart:ui';
+import 'package:audio_session/audio_session.dart';
 import 'package:flutter/material.dart';
 import 'package:hugeicons/hugeicons.dart';
 import 'services/permission_service.dart';
@@ -10,7 +12,6 @@ import 'pages/tags/all_tags_page.dart';
 import 'pages/tags/tag_detail_page.dart';
 import 'pages/settings/settings_page.dart';
 import 'pages/about/about_page.dart';
-import 'pages/search/search_page.dart';
 import 'pages/stream/web_stream_page.dart';
 import 'providers/audio_provider.dart';
 
@@ -28,7 +29,9 @@ class _MyMusicAppState extends State<MyMusicApp> with WidgetsBindingObserver {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-    _requestPermissions();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _requestPermissions();
+    });
   }
 
   @override
@@ -39,8 +42,21 @@ class _MyMusicAppState extends State<MyMusicApp> with WidgetsBindingObserver {
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state == AppLifecycleState.detached) {
-      widget.audioProvider.stop();
+    switch (state) {
+      case AppLifecycleState.resumed:
+        // Re-activate the audio session when the app comes back to the
+        // foreground. The OS may have silently deactivated it while the app
+        // was in the background, breaking lock-screen controls.
+        AudioSession.instance.then((session) => session.setActive(true));
+        break;
+      case AppLifecycleState.detached:
+        // Process is being killed — stop cleanly.
+        widget.audioProvider.stop();
+        break;
+      default:
+        // paused / inactive / hidden — audio must keep running in background;
+        // do not pause or stop the player here.
+        break;
     }
   }
 
@@ -70,7 +86,7 @@ class _MyMusicAppState extends State<MyMusicApp> with WidgetsBindingObserver {
 
 // ── Navigation Items ─────────────────────────────────────────────────────────
 
-enum _NavTab { home, stream, search, tags }
+enum _NavTab { home, stream, tags }
 
 class _AppShell extends StatefulWidget {
   const _AppShell();
@@ -110,6 +126,7 @@ class _AppShellState extends State<_AppShell> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.background,
+      extendBody: true, // Let content go behind the glass nav bar
       body: Stack(
         children: [
           // ── All tab pages are always mounted (Offstage keeps them alive).
@@ -137,16 +154,6 @@ class _AppShellState extends State<_AppShell> {
               ),
             ),
           Offstage(
-            offstage: _tab != _NavTab.search,
-            child: IgnorePointer(
-              ignoring: _tab != _NavTab.search,
-              child: TickerMode(
-                enabled: _tab == _NavTab.search,
-                child: const SearchPage(),
-              ),
-            ),
-          ),
-          Offstage(
             offstage: _tab != _NavTab.tags,
             child: IgnorePointer(
               ignoring: _tab != _NavTab.tags,
@@ -158,87 +165,87 @@ class _AppShellState extends State<_AppShell> {
           ),
         ],
       ),
-      bottomNavigationBar: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          // ── Mini Player ─────────────────────────────────────────────────
-          // Shows the local MiniPlayer when an offline song is active.
-          const MiniPlayer(),
-          _SpotifyBottomNav(
-            currentIndex: _tab.index,
-            onTap: _onTabChanged,
-          ),
-        ],
+      bottomNavigationBar: _GlassBottomNav(
+        currentIndex: _tab.index,
+        onTap: _onTabChanged,
       ),
     );
   }
 }
 
-// ── Custom Bottom Navigation ──────────────────────────────────────────────────
+// ── Glass Bottom Navigation ───────────────────────────────────────────────────
 
-class _SpotifyBottomNav extends StatelessWidget {
+class _GlassBottomNav extends StatelessWidget {
   final int currentIndex;
   final ValueChanged<int> onTap;
 
-  const _SpotifyBottomNav({required this.currentIndex, required this.onTap});
+  const _GlassBottomNav({required this.currentIndex, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
     final items = [
-      (HugeIcons.strokeRoundedHome01, HugeIcons.strokeRoundedHome01, 'Home'),
-      (HugeIcons.strokeRoundedRadio, HugeIcons.strokeRoundedRadio, 'Stream'),
-      (
-        HugeIcons.strokeRoundedSearch01,
-        HugeIcons.strokeRoundedSearch01,
-        'Search',
-      ),
-      (
-        HugeIcons.strokeRoundedFolderMusic,
-        HugeIcons.strokeRoundedFolderMusic,
-        'Library',
-      ),
+      (HugeIcons.strokeRoundedHome01, 'Home'),
+      (HugeIcons.strokeRoundedRadio, 'Stream'),
+      (HugeIcons.strokeRoundedFolderMusic, 'Library'),
     ];
 
-    return Container(
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        border: Border(
-          top: BorderSide(color: AppColors.surfaceBorder, width: 1),
-        ),
-      ),
-      child: SafeArea(
-        top: false,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 8),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: [
-              for (int i = 0; i < items.length; i++)
-                _NavItem(
-                  activeIcon: items[i].$1,
-                  inactiveIcon: items[i].$2,
-                  label: items[i].$3,
-                  isActive: currentIndex == i,
-                  onTap: () => onTap(i),
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        // ── Mini Player (hidden on Stream tab) ──────────────────────────
+        if (currentIndex != 1) const MiniPlayer(),
+        // ── Glassmorphic Nav Bar ─────────────────────────────────────────
+        ClipRect(
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
+            child: Container(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [
+                    AppColors.surface.withValues(alpha: 0.65),
+                    AppColors.background.withValues(alpha: 0.92),
+                  ],
                 ),
-            ],
+                border: const Border(
+                  top: BorderSide(color: AppColors.glassBorder, width: 0.8),
+                ),
+              ),
+              child: SafeArea(
+                top: false,
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 10),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceAround,
+                    children: [
+                      for (int i = 0; i < items.length; i++)
+                        _GlassNavItem(
+                          icon: items[i].$1,
+                          label: items[i].$2,
+                          isActive: currentIndex == i,
+                          onTap: () => onTap(i),
+                        ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
           ),
         ),
-      ),
+      ],
     );
   }
 }
 
-class _NavItem extends StatelessWidget {
-  final dynamic activeIcon;
-  final dynamic inactiveIcon;
+class _GlassNavItem extends StatelessWidget {
+  final dynamic icon;
   final String label;
   final bool isActive;
   final VoidCallback onTap;
 
-  const _NavItem({
-    required this.activeIcon,
-    required this.inactiveIcon,
+  const _GlassNavItem({
+    required this.icon,
     required this.label,
     required this.isActive,
     required this.onTap,
@@ -250,33 +257,48 @@ class _NavItem extends StatelessWidget {
       behavior: HitTestBehavior.opaque,
       onTap: onTap,
       child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 6),
+        duration: const Duration(milliseconds: 250),
+        curve: Curves.easeOutCubic,
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 7),
         decoration: isActive
             ? BoxDecoration(
-                color: AppColors.primaryFaint,
-                borderRadius: BorderRadius.circular(12),
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [
+                    AppColors.primary.withValues(alpha: 0.20),
+                    AppColors.accent.withValues(alpha: 0.08),
+                  ],
+                ),
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(
+                  color: AppColors.primary.withValues(alpha: 0.30),
+                  width: 0.8,
+                ),
               )
             : null,
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            AnimatedSwitcher(
-              duration: const Duration(milliseconds: 200),
+            AnimatedScale(
+              scale: isActive ? 1.1 : 1.0,
+              duration: const Duration(milliseconds: 250),
+              curve: Curves.easeOutCubic,
               child: HugeIcon(
-                icon: isActive ? activeIcon : inactiveIcon,
-                key: ValueKey(isActive),
+                icon: icon,
                 color: isActive ? AppColors.primary : AppColors.textSecondary,
-                size: 24,
+                size: 22,
               ),
             ),
             const SizedBox(height: 3),
-            Text(
-              label,
+            AnimatedDefaultTextStyle(
+              duration: const Duration(milliseconds: 250),
               style: AppTypography.label.copyWith(
                 color: isActive ? AppColors.primary : AppColors.textSecondary,
                 fontSize: 10,
+                fontWeight: isActive ? FontWeight.w700 : FontWeight.w400,
               ),
+              child: Text(label),
             ),
           ],
         ),

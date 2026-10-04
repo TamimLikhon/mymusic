@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:ui';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:audio_metadata_reader/audio_metadata_reader.dart';
@@ -34,14 +35,18 @@ class FullPlayerPage extends StatelessWidget {
         final song = audioProvider.currentSong;
 
         if (song == null) {
-          return Container(
-            height: 200,
-            decoration: const BoxDecoration(
-              color: AppColors.surfaceHigh,
-              borderRadius: BorderRadius.vertical(top: Radius.circular(32)),
-            ),
-            child: Center(
-              child: Text('No song playing', style: AppTypography.caption),
+          return ClipRRect(
+            borderRadius:
+                const BorderRadius.vertical(top: Radius.circular(32)),
+            child: BackdropFilter(
+              filter: ImageFilter.blur(sigmaX: 32, sigmaY: 32),
+              child: Container(
+                height: 200,
+                color: AppColors.surfaceHigh.withValues(alpha: 0.85),
+                child: Center(
+                  child: Text('No song playing', style: AppTypography.caption),
+                ),
+              ),
             ),
           );
         }
@@ -50,48 +55,67 @@ class FullPlayerPage extends StatelessWidget {
 
         return Container(
           height: MediaQuery.of(context).size.height * 0.93,
-          decoration: BoxDecoration(
-            color: AppColors.background,
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+          decoration: const BoxDecoration(
+            borderRadius: BorderRadius.vertical(top: Radius.circular(32)),
           ),
-          child: Stack(
-            children: [
-              // Ambient gradient background
-              _AmbientBackground(colors: colors),
+          child: ClipRRect(
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
+            child: Stack(
+              children: [
+                // Ambient gradient background
+                _AmbientBackground(colors: colors),
 
-              // Content
-              SafeArea(
-                bottom: false,
-                child: Column(
-                  children: [
-                    _buildHandle(context),
-                    const SizedBox(height: 8),
-                    Expanded(
-                      child: Column(
-                        children: [
-                          const SizedBox(height: 8),
-                          // Art card
-                          _buildArtCard(audioProvider, colors, song),
-                          const SizedBox(height: 28),
-                          // Song info
-                          _buildSongInfo(song.title, song.artist, song.album),
-                          const SizedBox(height: 24),
-                          // Seek bar
-                          _buildSeekBar(audioProvider),
-                          const SizedBox(height: 20),
-                          // Controls
-                          _buildControls(audioProvider),
-                          const SizedBox(height: 20),
-                          // Extra actions
-                          _buildExtraActions(context, song),
-                          const SizedBox(height: 16),
-                        ],
-                      ),
+                // Glass overlay on top of ambient
+                Container(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: [
+                        AppColors.background.withValues(alpha: 0.30),
+                        AppColors.background.withValues(alpha: 0.75),
+                        AppColors.background.withValues(alpha: 0.92),
+                      ],
+                      stops: const [0.0, 0.45, 1.0],
                     ),
-                  ],
+                  ),
                 ),
-              ),
-            ],
+
+                // Content
+                SafeArea(
+                  bottom: false,
+                  child: Column(
+                    children: [
+                      _buildHandle(context),
+                      const SizedBox(height: 8),
+                      Expanded(
+                        child: Column(
+                          children: [
+                            const SizedBox(height: 8),
+                            // Art card
+                            _buildArtCard(audioProvider, colors, song),
+                            const SizedBox(height: 28),
+                            // Song info
+                            _buildSongInfo(
+                                song.title, song.artist, song.album),
+                            const SizedBox(height: 24),
+                            // Seek bar
+                            _buildSeekBar(audioProvider),
+                            const SizedBox(height: 20),
+                            // Controls
+                            _buildControls(audioProvider),
+                            const SizedBox(height: 20),
+                            // Extra actions
+                            _buildExtraActions(context, song),
+                            const SizedBox(height: 16),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
           ),
         );
       },
@@ -105,24 +129,24 @@ class FullPlayerPage extends StatelessWidget {
         children: [
           const Spacer(),
           Container(
-            width: 40,
+            width: 36,
             height: 4,
             decoration: BoxDecoration(
-              color: AppColors.surfaceBorder,
+              color: AppColors.glassBorder,
               borderRadius: BorderRadius.circular(2),
             ),
           ),
           const Spacer(),
           GestureDetector(
             onTap: () => Navigator.of(context).pop(),
-            child: Container(
-              width: 36,
-              height: 36,
-              decoration: GlassCard.card(radius: 10),
+            child: GlassContainer(
+              radius: 12,
+              blurSigma: 16,
+              padding: const EdgeInsets.all(8),
               child: const HugeIcon(
                 icon: HugeIcons.strokeRoundedArrowDown01,
                 color: AppColors.textSecondary,
-                size: 24,
+                size: 22,
               ),
             ),
           ),
@@ -203,9 +227,7 @@ class FullPlayerPage extends StatelessWidget {
         children: [
           // Shuffle
           _ControlIcon(
-            icon: audioProvider.queueState.isShuffled
-                ? HugeIcons.strokeRoundedShuffle
-                : HugeIcons.strokeRoundedShuffle,
+            icon: HugeIcons.strokeRoundedShuffle,
             onTap: audioProvider.toggleShuffle,
             isActive: audioProvider.queueState.isShuffled,
           ),
@@ -256,7 +278,7 @@ class FullPlayerPage extends StatelessWidget {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
         children: [
-          _TextAction(
+          _GlassTextAction(
             icon: HugeIcons.strokeRoundedTag01,
             label: 'Tag',
             onTap: () => AssignTagSheet.show(
@@ -265,12 +287,12 @@ class FullPlayerPage extends StatelessWidget {
               song.title as String,
             ),
           ),
-          _TextAction(
+          _GlassTextAction(
             icon: HugeIcons.strokeRoundedImage01,
             label: 'Art',
             onTap: () => _setCustomArt(context, song),
           ),
-          _TextAction(
+          _GlassTextAction(
             icon: HugeIcons.strokeRoundedPlaylist01,
             label: 'Queue',
             onTap: () => _showQueueSheet(context),
@@ -291,7 +313,7 @@ class FullPlayerPage extends StatelessWidget {
           backgroundColor: AppColors.primary,
           behavior: SnackBarBehavior.floating,
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(14),
           ),
         ),
       );
@@ -305,137 +327,174 @@ class FullPlayerPage extends StatelessWidget {
 
     showModalBottomSheet(
       context: context,
-      backgroundColor: AppColors.surfaceHigh,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
-      ),
+      backgroundColor: Colors.transparent,
       isScrollControlled: true,
       builder: (context) {
-        return DraggableScrollableSheet(
-          initialChildSize: 0.5,
-          minChildSize: 0.3,
-          maxChildSize: 0.85,
-          expand: false,
-          builder: (context, scrollController) {
-            return Column(
-              children: [
-                Container(
-                  width: 40,
-                  height: 4,
-                  margin: const EdgeInsets.only(top: 14, bottom: 16),
-                  decoration: BoxDecoration(
-                    color: AppColors.surfaceBorder,
-                    borderRadius: BorderRadius.circular(2),
-                  ),
+        return ClipRRect(
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 32, sigmaY: 32),
+            child: Container(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [
+                    AppColors.surfaceHigh.withValues(alpha: 0.88),
+                    AppColors.surface.withValues(alpha: 0.92),
+                  ],
                 ),
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(20, 0, 20, 16),
-                  child: Row(
+                borderRadius:
+                    const BorderRadius.vertical(top: Radius.circular(32)),
+                border: const Border(
+                  top: BorderSide(color: AppColors.glassBorder, width: 0.8),
+                ),
+              ),
+              child: DraggableScrollableSheet(
+                initialChildSize: 0.5,
+                minChildSize: 0.3,
+                maxChildSize: 0.85,
+                expand: false,
+                builder: (context, scrollController) {
+                  return Column(
                     children: [
                       Container(
                         width: 36,
-                        height: 36,
-                        decoration: GlassCard.card(radius: 10),
-                        child: const HugeIcon(
-                          icon: HugeIcons.strokeRoundedPlaylist01,
-                          color: AppColors.primary,
-                          size: 18,
+                        height: 4,
+                        margin: const EdgeInsets.only(top: 14, bottom: 16),
+                        decoration: BoxDecoration(
+                          color: AppColors.glassBorder,
+                          borderRadius: BorderRadius.circular(2),
                         ),
                       ),
-                      const SizedBox(width: 12),
-                      Text('Up Next', style: AppTypography.heading),
-                      const Spacer(),
-                      Text('${q.length} songs', style: AppTypography.caption),
-                    ],
-                  ),
-                ),
-                Divider(height: 1, color: AppColors.divider),
-                Expanded(
-                  child: ListView.builder(
-                    controller: scrollController,
-                    padding: const EdgeInsets.symmetric(vertical: 8),
-                    itemCount: q.length,
-                    itemBuilder: (context, index) {
-                      final s = q[index];
-                      final isCurrent = index == currentIndex;
-                      final colors = AppColors.seedGradient(s.title);
-                      return ListTile(
-                        contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 20,
-                          vertical: 4,
-                        ),
-                        leading: Container(
-                          width: 42,
-                          height: 42,
-                          decoration: BoxDecoration(
-                            gradient: LinearGradient(
-                              colors: colors,
-                              begin: Alignment.topLeft,
-                              end: Alignment.bottomRight,
-                            ),
-                            borderRadius: BorderRadius.circular(10),
-                            border: isCurrent
-                                ? Border.all(color: AppColors.primary, width: 2)
-                                : null,
-                          ),
-                          child: Center(
-                            child: isCurrent
-                                ? const HugeIcon(
-                                    icon: HugeIcons.strokeRoundedMusicNote01,
-                                    size: 18,
-                                    color: Colors.white,
-                                  )
-                                : Text(
-                                    s.title.isNotEmpty
-                                        ? s.title[0].toUpperCase()
-                                        : '♪',
-                                    style: AppTypography.heading.copyWith(
-                                      color: Colors.white.withValues(
-                                        alpha: 0.9,
-                                      ),
-                                      fontSize: 16,
-                                    ),
-                                  ),
-                          ),
-                        ),
-                        title: Text(
-                          s.title,
-                          style: AppTypography.bodyMedium.copyWith(
-                            fontSize: 13,
-                            color: isCurrent
-                                ? AppColors.primary
-                                : AppColors.textPrimary,
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        subtitle: Text(
-                          s.artist,
-                          style: AppTypography.caption,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        trailing: isCurrent
-                            ? const HugeIcon(
-                                icon: HugeIcons.strokeRoundedMusicNote01,
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(20, 0, 20, 16),
+                        child: Row(
+                          children: [
+                            GlassContainer(
+                              radius: 12,
+                              blurSigma: 16,
+                              padding: const EdgeInsets.all(8),
+                              tint: AppColors.primary,
+                              tintOpacity: 0.12,
+                              child: const HugeIcon(
+                                icon: HugeIcons.strokeRoundedPlaylist01,
                                 color: AppColors.primary,
                                 size: 18,
-                              )
-                            : Text(
-                                '${index + 1}',
-                                style: AppTypography.caption,
                               ),
-                        onTap: () {
-                          context.read<AudioProvider>().jumpToQueueIndex(index);
-                          Navigator.pop(context);
-                        },
-                      );
-                    },
-                  ),
-                ),
-              ],
-            );
-          },
+                            ),
+                            const SizedBox(width: 12),
+                            Text('Up Next', style: AppTypography.heading),
+                            const Spacer(),
+                            Text('${q.length} songs',
+                                style: AppTypography.caption),
+                          ],
+                        ),
+                      ),
+                      Divider(
+                          height: 1,
+                          color: AppColors.glassBorder.withValues(alpha: 0.5)),
+                      Expanded(
+                        child: ListView.builder(
+                          controller: scrollController,
+                          padding: const EdgeInsets.symmetric(vertical: 8),
+                          itemCount: q.length,
+                          itemBuilder: (context, index) {
+                            final s = q[index];
+                            final isCurrent = index == currentIndex;
+                            final colors = AppColors.seedGradient(s.title);
+                            return ListTile(
+                              contentPadding: const EdgeInsets.symmetric(
+                                horizontal: 20,
+                                vertical: 4,
+                              ),
+                              leading: Container(
+                                width: 44,
+                                height: 44,
+                                decoration: BoxDecoration(
+                                  gradient: LinearGradient(
+                                    colors: colors,
+                                    begin: Alignment.topLeft,
+                                    end: Alignment.bottomRight,
+                                  ),
+                                  borderRadius: BorderRadius.circular(12),
+                                  border: isCurrent
+                                      ? Border.all(
+                                          color: AppColors.primary, width: 2)
+                                      : null,
+                                  boxShadow: isCurrent
+                                      ? [
+                                          BoxShadow(
+                                            color: colors[0]
+                                                .withValues(alpha: 0.4),
+                                            blurRadius: 12,
+                                          ),
+                                        ]
+                                      : null,
+                                ),
+                                child: Center(
+                                  child: isCurrent
+                                      ? const HugeIcon(
+                                          icon: HugeIcons
+                                              .strokeRoundedMusicNote01,
+                                          size: 18,
+                                          color: Colors.white,
+                                        )
+                                      : Text(
+                                          s.title.isNotEmpty
+                                              ? s.title[0].toUpperCase()
+                                              : '♪',
+                                          style: AppTypography.heading.copyWith(
+                                            color: Colors.white
+                                                .withValues(alpha: 0.9),
+                                            fontSize: 16,
+                                          ),
+                                        ),
+                                ),
+                              ),
+                              title: Text(
+                                s.title,
+                                style: AppTypography.bodyMedium.copyWith(
+                                  fontSize: 13,
+                                  color: isCurrent
+                                      ? AppColors.primary
+                                      : AppColors.textPrimary,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                              subtitle: Text(
+                                s.artist,
+                                style: AppTypography.caption,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                              trailing: isCurrent
+                                  ? HugeIcon(
+                                      icon: HugeIcons.strokeRoundedMusicNote01,
+                                      color: AppColors.primary,
+                                      size: 18,
+                                    )
+                                  : Text(
+                                      '${index + 1}',
+                                      style: AppTypography.caption,
+                                    ),
+                              onTap: () {
+                                context
+                                    .read<AudioProvider>()
+                                    .jumpToQueueIndex(index);
+                                Navigator.pop(context);
+                              },
+                            );
+                          },
+                        ),
+                      ),
+                    ],
+                  );
+                },
+              ),
+            ),
+          ),
         );
       },
     );
@@ -451,41 +510,32 @@ class _AmbientBackground extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Positioned.fill(
-      child: ClipRRect(
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
-        child: Stack(
-          children: [
-            // Base dark
-            Container(color: AppColors.background),
-            // Top-left blob
-            Positioned(
-              top: -60,
-              left: -80,
-              child: _GlowBlob(color: colors[0], size: 280),
+      child: Stack(
+        children: [
+          // Base dark
+          Container(color: AppColors.background),
+          // Top-left blob
+          Positioned(
+            top: -60,
+            left: -80,
+            child: _GlowBlob(color: colors[0], size: 320),
+          ),
+          // Bottom-right blob
+          Positioned(
+            bottom: 60,
+            right: -80,
+            child: _GlowBlob(color: colors[1], size: 260),
+          ),
+          // Center subtle radial
+          Positioned(
+            top: 100,
+            right: 40,
+            child: _GlowBlob(
+              color: colors[0].withValues(alpha: 0.4),
+              size: 180,
             ),
-            // Bottom-right blob
-            Positioned(
-              bottom: 40,
-              right: -60,
-              child: _GlowBlob(color: colors[1], size: 220),
-            ),
-            // Overlay darken
-            Container(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [
-                    AppColors.background.withValues(alpha: 0.55),
-                    AppColors.background.withValues(alpha: 0.90),
-                    AppColors.background,
-                  ],
-                  stops: const [0.0, 0.5, 1.0],
-                ),
-              ),
-            ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
@@ -505,27 +555,12 @@ class _GlowBlob extends StatelessWidget {
         shape: BoxShape.circle,
         boxShadow: [
           BoxShadow(
-            color: color.withValues(alpha: 0.28),
-            blurRadius: size * 0.7,
-            spreadRadius: size * 0.1,
+            color: color.withValues(alpha: 0.22),
+            blurRadius: size * 0.8,
+            spreadRadius: size * 0.12,
           ),
         ],
       ),
-    );
-  }
-}
-
-// ── Static Vinyl Icon (compact) ─────────────────────────────────────────────
-
-class _StaticVinylIcon extends StatelessWidget {
-  const _StaticVinylIcon();
-
-  @override
-  Widget build(BuildContext context) {
-    return HugeIcon(
-      icon: HugeIcons.strokeRoundedMusicNote02,
-      size: 100,
-      color: Colors.white.withValues(alpha: 0.35),
     );
   }
 }
@@ -599,13 +634,19 @@ class _SongArtCardState extends State<_SongArtCard> {
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
             ),
-            borderRadius: BorderRadius.circular(24),
+            borderRadius: BorderRadius.circular(28),
             boxShadow: [
               BoxShadow(
-                color: widget.colors[0].withValues(alpha: 0.4),
-                blurRadius: 40,
+                color: widget.colors[0].withValues(alpha: 0.50),
+                blurRadius: 48,
                 offset: const Offset(0, 20),
                 spreadRadius: -8,
+              ),
+              BoxShadow(
+                color: widget.colors[1].withValues(alpha: 0.25),
+                blurRadius: 28,
+                offset: const Offset(0, 8),
+                spreadRadius: -4,
               ),
             ],
           ),
@@ -614,17 +655,23 @@ class _SongArtCardState extends State<_SongArtCard> {
             builder: (context, snapshot) {
               if (snapshot.hasData && snapshot.data != null) {
                 return ClipRRect(
-                  borderRadius: BorderRadius.circular(24),
+                  borderRadius: BorderRadius.circular(28),
                   child: Image.memory(snapshot.data!, fit: BoxFit.cover),
                 );
               }
 
-              // Fallback if no image or still loading
+              // Fallback
               return Center(
                 child: widget.audioProvider.isPlaying
-                    ? const Column(
+                    ? Column(
                         mainAxisAlignment: MainAxisAlignment.center,
-                        children: [_StaticVinylIcon()],
+                        children: [
+                          HugeIcon(
+                            icon: HugeIcons.strokeRoundedMusicNote02,
+                            size: 100,
+                            color: Colors.white.withValues(alpha: 0.35),
+                          ),
+                        ],
                       )
                     : Text(
                         widget.song.title.isNotEmpty
@@ -679,8 +726,19 @@ class _ControlIconState extends State<_ControlIcon> {
       child: AnimatedOpacity(
         opacity: _pressed ? 0.5 : 1.0,
         duration: const Duration(milliseconds: 100),
-        child: Padding(
-          padding: const EdgeInsets.all(8),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          padding: const EdgeInsets.all(10),
+          decoration: widget.isActive
+              ? BoxDecoration(
+                  color: AppColors.primary.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: AppColors.primary.withValues(alpha: 0.3),
+                    width: 0.8,
+                  ),
+                )
+              : null,
           child: HugeIcon(
             icon: widget.icon,
             size: widget.size,
@@ -750,13 +808,23 @@ class _BigPlayPauseState extends State<_BigPlayPause>
           width: 72,
           height: 72,
           decoration: BoxDecoration(
-            color: Colors.white,
+            gradient: const LinearGradient(
+              colors: [AppColors.primary, AppColors.secondary],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
             shape: BoxShape.circle,
             boxShadow: [
               BoxShadow(
-                color: Colors.white.withValues(alpha: 0.2),
-                blurRadius: 24,
+                color: AppColors.primary.withValues(alpha: 0.50),
+                blurRadius: 32,
                 spreadRadius: 2,
+                offset: const Offset(0, 8),
+              ),
+              BoxShadow(
+                color: AppColors.secondary.withValues(alpha: 0.20),
+                blurRadius: 12,
+                offset: const Offset(0, 4),
               ),
             ],
           ),
@@ -767,7 +835,7 @@ class _BigPlayPauseState extends State<_BigPlayPause>
                     height: 24,
                     child: CircularProgressIndicator(
                       strokeWidth: 2.5,
-                      color: AppColors.background,
+                      color: Colors.white,
                     ),
                   ),
                 )
@@ -779,8 +847,8 @@ class _BigPlayPauseState extends State<_BigPlayPause>
                           ? HugeIcons.strokeRoundedPause
                           : HugeIcons.strokeRoundedPlay,
                       key: ValueKey(widget.isPlaying),
-                      size: 38,
-                      color: AppColors.background,
+                      size: 36,
+                      color: Colors.white,
                     ),
                   ),
                 ),
@@ -790,22 +858,24 @@ class _BigPlayPauseState extends State<_BigPlayPause>
   }
 }
 
-// ── Text Action ───────────────────────────────────────────────────────────────
+// ── Glass Text Action ─────────────────────────────────────────────────────────
 
-class _TextAction extends StatelessWidget {
+class _GlassTextAction extends StatelessWidget {
   final dynamic icon;
   final String label;
   final VoidCallback? onTap;
 
-  const _TextAction({required this.icon, required this.label, this.onTap});
+  const _GlassTextAction(
+      {required this.icon, required this.label, this.onTap});
 
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-        decoration: GlassCard.card(radius: 14),
+      child: GlassContainer(
+        radius: 16,
+        blurSigma: 16,
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [

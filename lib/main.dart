@@ -7,29 +7,49 @@ import 'providers/tag_provider.dart';
 import 'providers/audio_provider.dart';
 import 'services/unified_audio_service.dart';
 import 'services/playback_coordinator.dart';
+import 'services/ad_block/ad_block_service.dart';
 import 'services/stream/stream_session_controller.dart';
 import 'app.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // just_audio_background owns notification controls for local music only.
-  await JustAudioBackground.init(
-    androidNotificationChannelId: 'com.mymusic.audio',
-    androidNotificationChannelName: 'MyMusic Playback',
-    androidNotificationOngoing: false,
-    androidStopForegroundOnPause: false,
-  );
+  try {
+    // just_audio_background owns notification controls for local music only.
+    await JustAudioBackground.init(
+      androidNotificationChannelId: 'com.mymusic.audio',
+      androidNotificationChannelName: 'MyMusic Playback',
+      androidNotificationOngoing: true,
+      androidStopForegroundOnPause: true,
+    );
+  } catch (e, st) {
+    debugPrint('JustAudioBackground.init error: $e\n$st');
+  }
 
-  // Create the single shared AudioPlayer first — both the local-music layer
-  // and the WebView's lock screen session use this one instance, satisfying
-  // the just_audio_background "single player at a time" constraint.
-  await UnifiedAudioService.instance.initialize();
+  try {
+    // Create the single shared AudioPlayer instance.
+    await UnifiedAudioService.instance.initialize();
+  } catch (e, st) {
+    debugPrint('UnifiedAudioService.initialize error: $e\n$st');
+  }
+
+  try {
+    // Pre-compile ad-block rules before the WebView is created.
+    AdBlockService.instance.initialize();
+  } catch (e, st) {
+    debugPrint('AdBlockService.initialize error: $e\n$st');
+  }
 
   final database = AppDatabase();
   final streamSession = StreamSessionController();
   final playbackCoordinator = PlaybackCoordinator(streamSession: streamSession);
-  await playbackCoordinator.initialize();
+  
+  try {
+    await playbackCoordinator.initialize();
+  } catch (e, st) {
+    debugPrint('playbackCoordinator.initialize error: $e\n$st');
+  }
+  
   final audioProvider = AudioProvider(database, playbackCoordinator);
   
   runApp(

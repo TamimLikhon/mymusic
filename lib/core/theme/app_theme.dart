@@ -29,16 +29,16 @@ class AppTheme {
           letterSpacing: -0.3,
         ),
         iconTheme: const IconThemeData(color: AppColors.textPrimary),
-        systemOverlayStyle: SystemUiOverlayStyle(
+        systemOverlayStyle: const SystemUiOverlayStyle(
           statusBarColor: Colors.transparent,
           statusBarIconBrightness: Brightness.light,
-          systemNavigationBarColor: AppColors.surface,
+          systemNavigationBarColor: Color(0xFF08081A),
           systemNavigationBarIconBrightness: Brightness.light,
         ),
       ),
 
       bottomNavigationBarTheme: const BottomNavigationBarThemeData(
-        backgroundColor: AppColors.surface,
+        backgroundColor: Colors.transparent,
         selectedItemColor: AppColors.primary,
         unselectedItemColor: AppColors.textSecondary,
         type: BottomNavigationBarType.fixed,
@@ -81,12 +81,13 @@ class AppTheme {
           fontSize: 13,
         ),
         behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        elevation: 0,
       ),
 
       dialogTheme: DialogThemeData(
         backgroundColor: AppColors.surfaceHigh,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
         elevation: 0,
         titleTextStyle: GoogleFonts.inter(
           color: AppColors.textPrimary,
@@ -100,10 +101,10 @@ class AppTheme {
       ),
 
       bottomSheetTheme: const BottomSheetThemeData(
-        backgroundColor: AppColors.surfaceHigh,
-        modalBackgroundColor: AppColors.surfaceHigh,
+        backgroundColor: Colors.transparent,
+        modalBackgroundColor: Colors.transparent,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+          borderRadius: BorderRadius.vertical(top: Radius.circular(32)),
         ),
         elevation: 0,
       ),
@@ -128,6 +129,7 @@ class AppTheme {
       colorScheme: const ColorScheme.dark(
         primary: AppColors.primary,
         secondary: AppColors.secondary,
+        tertiary: AppColors.accent,
         surface: AppColors.surface,
         error: AppColors.error,
         onPrimary: Colors.white,
