@@ -2,7 +2,7 @@
 
 # 🎵 MyMusic
 
-### *A modern, retro-futuristic offline music player with tag-based organization and ad-free web streaming.*
+### *A modern, offline music player and ad-free web streaming like youtubemusic.*
 
 [![Flutter](https://img.shields.io/badge/Flutter-3.x-02569B?logo=flutter&logoColor=white)](https://flutter.dev)
 [![Dart](https://img.shields.io/badge/Dart-3.11+-0175C2?logo=dart&logoColor=white)](https://dart.dev)
