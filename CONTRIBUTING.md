@@ -14,8 +14,8 @@ Please maintain a respectful, welcoming, and inclusive atmosphere when opening i
 
 1. **Fork and Clone**:
    ```bash
-   git clone https://github.com/<your-username>/mymusiccc.git
-   cd mymusiccc
+   git clone https://github.com/<your-username>/mymusic.git
+   cd mymusic
    ```
 2. **Install Flutter Dependencies**:
    ```bash
@@ -69,5 +69,5 @@ We actively support contributions made with Anthropic's **Claude** and **Claude 
 
 ## 🐛 Reporting Bugs & Requesting Features
 
-- Use [GitHub Issues](https://github.com/TamimLikhon/mymusiccc/issues) to report bugs or propose new features.
+- Use [GitHub Issues](https://github.com/TamimLikhon/mymusic/issues) to report bugs or propose new features.
 - Please include your device model, Android version, and steps to reproduce any playback or UI issues.

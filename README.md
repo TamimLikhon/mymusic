@@ -76,8 +76,8 @@ For an in-depth breakdown of the codebase architecture, read [CODEBASE_ARCHITECT
 
 1. **Clone the repository**:
    ```bash
-   git clone https://github.com/TamimLikhon/mymusiccc.git
-   cd mymusiccc
+   git clone https://github.com/TamimLikhon/mymusic.git
+   cd mymusic
    ```
 
 2. **Install Flutter packages**:
