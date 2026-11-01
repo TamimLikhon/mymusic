@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:drift/drift.dart';
 import 'package:flutter/foundation.dart';
 import 'package:path/path.dart' as p;
 import '../data/database/app_database.dart';
@@ -108,6 +109,16 @@ class SongProvider extends ChangeNotifier {
 
   Future<int> getLibrarySize() =>
       _importService.getLibrarySize();
+
+  void updateCustomArt(String songId, String? artPath) {
+    final index = _songs.indexWhere((s) => s.id == songId);
+    if (index != -1) {
+      _songs[index] = _songs[index].copyWith(
+        custom_art_path: Value(artPath),
+      );
+      notifyListeners();
+    }
+  }
 
   Future<bool> renameSong(Song song, String newTitle) async {
     try {

@@ -9,9 +9,11 @@ import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_typography.dart';
 import '../../core/theme/glass_card.dart';
 import '../../providers/audio_provider.dart';
+import '../../providers/song_provider.dart';
 import '../../data/database/app_database.dart';
 import '../../data/models/queue_state.dart' as queue;
 import '../../services/custom_art_service.dart';
+import '../../core/utils/art_extractor.dart';
 import '../../widgets/retro_seek_bar.dart';
 import '../../widgets/assign_tag_sheet.dart';
 
@@ -36,8 +38,7 @@ class FullPlayerPage extends StatelessWidget {
 
         if (song == null) {
           return ClipRRect(
-            borderRadius:
-                const BorderRadius.vertical(top: Radius.circular(32)),
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
             child: BackdropFilter(
               filter: ImageFilter.blur(sigmaX: 32, sigmaY: 32),
               child: Container(
@@ -96,8 +97,7 @@ class FullPlayerPage extends StatelessWidget {
                             _buildArtCard(audioProvider, colors, song),
                             const SizedBox(height: 28),
                             // Song info
-                            _buildSongInfo(
-                                song.title, song.artist, song.album),
+                            _buildSongInfo(song.title, song.artist, song.album),
                             const SizedBox(height: 24),
                             // Seek bar
                             _buildSeekBar(audioProvider),
@@ -158,7 +158,7 @@ class FullPlayerPage extends StatelessWidget {
   Widget _buildArtCard(
     AudioProvider audioProvider,
     List<Color> colors,
-    dynamic song,
+    Song song,
   ) {
     return _SongArtCard(
       audioProvider: audioProvider,
@@ -272,7 +272,7 @@ class FullPlayerPage extends StatelessWidget {
     }
   }
 
-  Widget _buildExtraActions(BuildContext context, dynamic song) {
+  Widget _buildExtraActions(BuildContext context, Song song) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 36),
       child: Row(
@@ -281,11 +281,7 @@ class FullPlayerPage extends StatelessWidget {
           _GlassTextAction(
             icon: HugeIcons.strokeRoundedTag01,
             label: 'Tag',
-            onTap: () => AssignTagSheet.show(
-              context,
-              song.id as String,
-              song.title as String,
-            ),
+            onTap: () => AssignTagSheet.show(context, song.id, song.title),
           ),
           _GlassTextAction(
             icon: HugeIcons.strokeRoundedImage01,
@@ -302,11 +298,13 @@ class FullPlayerPage extends StatelessWidget {
     );
   }
 
-  Future<void> _setCustomArt(BuildContext context, dynamic song) async {
+  Future<void> _setCustomArt(BuildContext context, Song song) async {
     final db = context.read<AppDatabase>();
     final service = CustomArtService(db);
-    final path = await service.pickAndSetArt(song.id as String);
+    final path = await service.pickAndSetArt(song.id);
     if (path != null && context.mounted) {
+      context.read<SongProvider>().updateCustomArt(song.id, path);
+      context.read<AudioProvider>().updateCustomArt(song.id, path);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Thumbnail set for ${song.title}'),
@@ -344,8 +342,9 @@ class FullPlayerPage extends StatelessWidget {
                     AppColors.surface.withValues(alpha: 0.92),
                   ],
                 ),
-                borderRadius:
-                    const BorderRadius.vertical(top: Radius.circular(32)),
+                borderRadius: const BorderRadius.vertical(
+                  top: Radius.circular(32),
+                ),
                 border: const Border(
                   top: BorderSide(color: AppColors.glassBorder, width: 0.8),
                 ),
@@ -386,14 +385,17 @@ class FullPlayerPage extends StatelessWidget {
                             const SizedBox(width: 12),
                             Text('Up Next', style: AppTypography.heading),
                             const Spacer(),
-                            Text('${q.length} songs',
-                                style: AppTypography.caption),
+                            Text(
+                              '${q.length} songs',
+                              style: AppTypography.caption,
+                            ),
                           ],
                         ),
                       ),
                       Divider(
-                          height: 1,
-                          color: AppColors.glassBorder.withValues(alpha: 0.5)),
+                        height: 1,
+                        color: AppColors.glassBorder.withValues(alpha: 0.5),
+                      ),
                       Expanded(
                         child: ListView.builder(
                           controller: scrollController,
@@ -420,13 +422,16 @@ class FullPlayerPage extends StatelessWidget {
                                   borderRadius: BorderRadius.circular(12),
                                   border: isCurrent
                                       ? Border.all(
-                                          color: AppColors.primary, width: 2)
+                                          color: AppColors.primary,
+                                          width: 2,
+                                        )
                                       : null,
                                   boxShadow: isCurrent
                                       ? [
                                           BoxShadow(
-                                            color: colors[0]
-                                                .withValues(alpha: 0.4),
+                                            color: colors[0].withValues(
+                                              alpha: 0.4,
+                                            ),
                                             blurRadius: 12,
                                           ),
                                         ]
@@ -445,8 +450,9 @@ class FullPlayerPage extends StatelessWidget {
                                               ? s.title[0].toUpperCase()
                                               : '♪',
                                           style: AppTypography.heading.copyWith(
-                                            color: Colors.white
-                                                .withValues(alpha: 0.9),
+                                            color: Colors.white.withValues(
+                                              alpha: 0.9,
+                                            ),
                                             fontSize: 16,
                                           ),
                                         ),
@@ -480,9 +486,9 @@ class FullPlayerPage extends StatelessWidget {
                                       style: AppTypography.caption,
                                     ),
                               onTap: () {
-                                context
-                                    .read<AudioProvider>()
-                                    .jumpToQueueIndex(index);
+                                context.read<AudioProvider>().jumpToQueueIndex(
+                                  index,
+                                );
                                 Navigator.pop(context);
                               },
                             );
@@ -570,7 +576,7 @@ class _GlowBlob extends StatelessWidget {
 class _SongArtCard extends StatefulWidget {
   final AudioProvider audioProvider;
   final List<Color> colors;
-  final dynamic song;
+  final Song song;
 
   const _SongArtCard({
     required this.audioProvider,
@@ -601,13 +607,26 @@ class _SongArtCardState extends State<_SongArtCard> {
   }
 
   void _loadImage() {
-    final customArt = widget.song.custom_art_path as String?;
+    _imageFuture = _loadArtBytes();
+  }
+
+  Future<Uint8List?> _loadArtBytes() async {
+    final customArt = widget.song.custom_art_path;
     if (customArt != null) {
-      _imageFuture = Future.value(File(customArt).readAsBytesSync());
-      return;
+      final file = File(customArt);
+      if (await file.exists()) {
+        return await file.readAsBytes();
+      }
     }
-    final filePath = widget.song.file_path;
-    _imageFuture = compute((path) {
+
+    // Check pre-extracted cache first to avoid re-reading ID3 from disk
+    final cachePath = await ArtExtractor.getCachePath(widget.song.id);
+    final cacheFile = File(cachePath);
+    if (await cacheFile.exists()) {
+      return await cacheFile.readAsBytes();
+    }
+
+    return compute((path) {
       try {
         final metadata = readMetadata(File(path), getImage: true);
         final pictures = metadata.pictures;
@@ -616,7 +635,7 @@ class _SongArtCardState extends State<_SongArtCard> {
         }
       } catch (_) {}
       return null;
-    }, filePath as String);
+    }, widget.song.file_path);
   }
 
   @override
@@ -865,8 +884,7 @@ class _GlassTextAction extends StatelessWidget {
   final String label;
   final VoidCallback? onTap;
 
-  const _GlassTextAction(
-      {required this.icon, required this.label, this.onTap});
+  const _GlassTextAction({required this.icon, required this.label, this.onTap});
 
   @override
   Widget build(BuildContext context) {

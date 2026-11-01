@@ -18,13 +18,18 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_openConnection());
 
   @override
-  int get schemaVersion => 2;
+  int get schemaVersion => 3;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
         onUpgrade: (migrator, from, to) async {
           if (from < 2) {
             await migrator.addColumn(songs, songs.custom_art_path);
+          }
+          if (from < 3) {
+            // Recreate song_tags table with composite primary key (song_id, tag_id)
+            await migrator.deleteTable('song_tags');
+            await migrator.createTable(songTags);
           }
         },
       );

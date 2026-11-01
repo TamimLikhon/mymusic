@@ -1,7 +1,13 @@
+import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:permission_handler/permission_handler.dart';
 
 class PermissionService {
+  bool get _isMobile => !kIsWeb && (Platform.isAndroid || Platform.isIOS);
+
   Future<bool> requestStoragePermission({bool allowOpenSettings = false}) async {
+    if (!_isMobile) return true;
+
     try {
       // Android 13+: use READ_MEDIA_AUDIO
       final audioStatus = await Permission.audio.status;
@@ -34,6 +40,8 @@ class PermissionService {
   }
 
   Future<bool> requestNotificationPermission({bool allowOpenSettings = false}) async {
+    if (!_isMobile) return true;
+
     try {
       final status = await Permission.notification.status;
       if (status.isGranted) return true;

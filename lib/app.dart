@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'dart:ui';
 import 'package:audio_session/audio_session.dart';
 import 'package:flutter/material.dart';
@@ -47,7 +48,9 @@ class _MyMusicAppState extends State<MyMusicApp> with WidgetsBindingObserver {
         // Re-activate the audio session when the app comes back to the
         // foreground. The OS may have silently deactivated it while the app
         // was in the background, breaking lock-screen controls.
-        AudioSession.instance.then((session) => session.setActive(true));
+        if (!kIsWeb && (Platform.isAndroid || Platform.isIOS)) {
+          AudioSession.instance.then((session) => session.setActive(true));
+        }
         break;
       case AppLifecycleState.detached:
         // Process is being killed — stop cleanly.

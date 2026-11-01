@@ -1,7 +1,10 @@
 import 'dart:io';
+import 'package:path/path.dart' as p;
+import '../constants/app_constants.dart';
 
 String getFileExtension(String path) {
-  return path.split('.').last.toLowerCase();
+  final ext = p.extension(path);
+  return ext.startsWith('.') ? ext.substring(1).toLowerCase() : ext.toLowerCase();
 }
 
 String formatFileSize(int bytes) {
@@ -12,9 +15,7 @@ String formatFileSize(int bytes) {
 
 bool isAudioFile(String path) {
   final ext = getFileExtension(path);
-  return [
-    'mp3', 'm4a', 'aac', 'wav', 'ogg', 'flac', 'opus', 'wma', 'amr',
-  ].contains(ext);
+  return AppConstants.supportedExtensions.contains(ext);
 }
 
 Future<int> getFileSize(String path) async {

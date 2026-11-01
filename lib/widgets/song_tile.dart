@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:audio_metadata_reader/audio_metadata_reader.dart';
 import '../core/theme/app_colors.dart';
 import '../core/theme/app_typography.dart';
+import '../core/utils/art_extractor.dart';
 import '../core/utils/duration_formatter.dart';
 import '../data/database/app_database.dart';
 import 'animated_bars.dart';
@@ -237,14 +238,27 @@ class _SongArtWidgetState extends State<SongArtWidget> {
   }
 
   void _loadImage() {
+    _imageFuture = _loadArtBytes();
+  }
+
+  Future<Uint8List?> _loadArtBytes() async {
     final customArt = widget.song.custom_art_path;
-    if (customArt != null && File(customArt).existsSync()) {
-      _imageFuture = File(customArt).readAsBytes();
-      return;
+    if (customArt != null) {
+      final file = File(customArt);
+      if (await file.exists()) {
+        return await file.readAsBytes();
+      }
+    }
+
+    // Check cached album art before doing expensive ID3 extraction
+    final cachePath = await ArtExtractor.getCachePath(widget.song.id);
+    final cacheFile = File(cachePath);
+    if (await cacheFile.exists()) {
+      return await cacheFile.readAsBytes();
     }
 
     final filePath = widget.song.file_path;
-    _imageFuture = compute((path) {
+    return compute((path) {
       try {
         final metadata = readMetadata(File(path), getImage: true);
         final pictures = metadata.pictures;

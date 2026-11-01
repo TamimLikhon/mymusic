@@ -1,3 +1,4 @@
+import 'package:drift/drift.dart' show Value;
 import 'package:flutter/foundation.dart';
 import 'package:just_audio/just_audio.dart';
 import 'package:just_audio_background/just_audio_background.dart';
@@ -419,6 +420,36 @@ class AudioProvider extends ChangeNotifier {
   bool get hasPrevious {
     if (_queueState.queue.isEmpty) return false;
     return _player.hasPrevious || _position.inSeconds > 3;
+  }
+
+  void updateCustomArt(String songId, String? artPath) {
+    bool changed = false;
+    final newQueue = _queueState.queue.map((s) {
+      if (s.id == songId) {
+        changed = true;
+        return s.copyWith(custom_art_path: Value(artPath));
+      }
+      return s;
+    }).toList();
+
+    List<Song>? newUnshuffledQueue;
+    if (_queueState.unshuffledQueue != null) {
+      newUnshuffledQueue = _queueState.unshuffledQueue!.map((s) {
+        if (s.id == songId) {
+          changed = true;
+          return s.copyWith(custom_art_path: Value(artPath));
+        }
+        return s;
+      }).toList();
+    }
+
+    if (changed) {
+      _queueState = _queueState.copyWith(
+        queue: newQueue,
+        unshuffledQueue: newUnshuffledQueue,
+      );
+      notifyListeners();
+    }
   }
 
   @override

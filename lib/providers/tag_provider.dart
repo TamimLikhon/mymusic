@@ -64,8 +64,19 @@ class TagProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> removeSongFromTag(String songId) async {
-    await _db.songTagDao.removeSongFromTag(songId);
+  Future<void> removeSongFromTag(String songId, [String? tagId]) async {
+    await _db.songTagDao.removeSongFromTag(songId, tagId: tagId);
+    _songCounts = await _db.songTagDao.getTagSongCounts();
+    notifyListeners();
+  }
+
+  Future<void> toggleSongTag(String songId, String tagId) async {
+    final isInTag = await _db.songTagDao.isSongInTag(songId, tagId);
+    if (isInTag) {
+      await _db.songTagDao.removeSongFromTag(songId, tagId: tagId);
+    } else {
+      await _db.songTagDao.assignSongToTag(songId, tagId);
+    }
     _songCounts = await _db.songTagDao.getTagSongCounts();
     notifyListeners();
   }
@@ -75,6 +86,12 @@ class TagProvider extends ChangeNotifier {
 
   Future<Tag?> getTagForSong(String songId) =>
       _db.songTagDao.getTagForSong(songId);
+
+  Future<List<Tag>> getTagsForSong(String songId) =>
+      _db.songTagDao.getTagsForSong(songId);
+
+  Future<bool> isSongInTag(String songId, String tagId) =>
+      _db.songTagDao.isSongInTag(songId, tagId);
 
   Future<int> getTagSongCount(String tagId) async {
     final songs = await _db.songTagDao.getSongsForTag(tagId);

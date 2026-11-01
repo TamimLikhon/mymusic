@@ -13,8 +13,8 @@ class DirectorySettingsService {
   /// Parses a SAF content URI from file_picker into a real filesystem path.
   /// Returns the original uri as fallback so the scanner can try it (dir.exists() will filter invalid ones).
   String? parseSafUri(String uri) {
-    // Already a filesystem path
-    if (uri.startsWith('/')) return uri;
+    // Already a filesystem path (POSIX or Windows drive letter)
+    if (uri.startsWith('/') || RegExp(r'^[a-zA-Z]:[/\\]').hasMatch(uri)) return uri;
 
     // Not a content URI — maybe file_picker returned something unexpected.
     // Return it as-is and let dir.exists() validate it.

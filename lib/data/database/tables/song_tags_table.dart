@@ -10,5 +10,5 @@ class SongTags extends Table {
   IntColumn get added_at => integer()();
 
   @override
-  Set<Column> get primaryKey => {song_id};
+  Set<Column> get primaryKey => {song_id, tag_id};
 }

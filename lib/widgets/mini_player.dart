@@ -7,6 +7,8 @@ import 'package:hugeicons/hugeicons.dart';
 import 'package:provider/provider.dart';
 import '../core/theme/app_colors.dart';
 import '../core/theme/app_typography.dart';
+import '../core/utils/art_extractor.dart';
+import '../data/database/app_database.dart';
 import '../providers/audio_provider.dart';
 import '../pages/player/full_player_page.dart';
 import 'animated_bars.dart';
@@ -46,7 +48,7 @@ class MiniPlayer extends StatelessWidget {
 
 class _MiniPlayerContent extends StatelessWidget {
   final AudioProvider audioProvider;
-  final dynamic song;
+  final Song song;
 
   const _MiniPlayerContent({
     super.key,
@@ -56,7 +58,7 @@ class _MiniPlayerContent extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colors = AppColors.seedGradient(song.title as String);
+    final colors = AppColors.seedGradient(song.title);
 
     return Dismissible(
       key: const Key('mini_player_dismissible'),
@@ -279,7 +281,7 @@ class _GlassPlayPauseBtn extends StatelessWidget {
 // ── Mini Player Art ──────────────────────────────────────────────────────────
 
 class _MiniPlayerArt extends StatefulWidget {
-  final dynamic song;
+  final Song song;
   final List<Color> colors;
   final AudioProvider audioProvider;
 
@@ -312,13 +314,25 @@ class _MiniPlayerArtState extends State<_MiniPlayerArt> {
   }
 
   void _loadImage() {
-    final customArt = widget.song.custom_art_path as String?;
+    _imageFuture = _loadArtBytes();
+  }
+
+  Future<Uint8List?> _loadArtBytes() async {
+    final customArt = widget.song.custom_art_path;
     if (customArt != null) {
-      _imageFuture = Future.value(File(customArt).readAsBytesSync());
-      return;
+      final file = File(customArt);
+      if (await file.exists()) {
+        return await file.readAsBytes();
+      }
     }
-    final filePath = widget.song.file_path;
-    _imageFuture = compute((path) {
+
+    final cachePath = await ArtExtractor.getCachePath(widget.song.id);
+    final cacheFile = File(cachePath);
+    if (await cacheFile.exists()) {
+      return await cacheFile.readAsBytes();
+    }
+
+    return compute((path) {
       try {
         final metadata = readMetadata(File(path), getImage: true);
         final pictures = metadata.pictures;
@@ -327,7 +341,7 @@ class _MiniPlayerArtState extends State<_MiniPlayerArt> {
         }
       } catch (_) {}
       return null;
-    }, filePath as String);
+    }, widget.song.file_path);
   }
 
   @override

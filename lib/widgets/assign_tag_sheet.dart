@@ -32,36 +32,37 @@ class AssignTagSheet extends StatefulWidget {
 }
 
 class _AssignTagSheetState extends State<AssignTagSheet> {
-  String? _currentTagId;
+  final Set<String> _assignedTagIds = {};
   bool _isLoading = true;
 
   @override
   void initState() {
     super.initState();
-    _loadCurrentTag();
+    _loadCurrentTags();
   }
 
-  Future<void> _loadCurrentTag() async {
-    final tag = await context.read<TagProvider>().getTagForSong(widget.songId);
+  Future<void> _loadCurrentTags() async {
+    final tags = await context.read<TagProvider>().getTagsForSong(widget.songId);
     if (mounted) {
       setState(() {
-        _currentTagId = tag?.id;
+        _assignedTagIds.addAll(tags.map((t) => t.id));
         _isLoading = false;
       });
     }
   }
 
-  Future<void> _assignToTag(String tagId, bool isCurrentlyAssigned) async {
+  Future<void> _toggleTag(String tagId) async {
     final tagProvider = context.read<TagProvider>();
+    final isCurrentlyAssigned = _assignedTagIds.contains(tagId);
     if (isCurrentlyAssigned) {
-      await tagProvider.removeSongFromTag(widget.songId);
+      await tagProvider.removeSongFromTag(widget.songId, tagId);
       if (mounted) {
-        setState(() => _currentTagId = null);
+        setState(() => _assignedTagIds.remove(tagId));
       }
     } else {
       await tagProvider.assignSongToTag(widget.songId, tagId);
       if (mounted) {
-        setState(() => _currentTagId = tagId);
+        setState(() => _assignedTagIds.add(tagId));
       }
     }
   }
@@ -344,13 +345,13 @@ class _AssignTagSheetState extends State<AssignTagSheet> {
                         itemCount: tagProvider.tags.length,
                         itemBuilder: (context, index) {
                           final tag = tagProvider.tags[index];
-                          final isAssigned = _currentTagId == tag.id;
+                          final isAssigned = _assignedTagIds.contains(tag.id);
                           final tagColor = Color(tag.color);
 
                           return Padding(
                             padding: const EdgeInsets.symmetric(vertical: 5),
                             child: GestureDetector(
-                              onTap: () => _assignToTag(tag.id, isAssigned),
+                              onTap: () => _toggleTag(tag.id),
                               child: AnimatedContainer(
                                 duration: const Duration(milliseconds: 220),
                                 padding: const EdgeInsets.symmetric(

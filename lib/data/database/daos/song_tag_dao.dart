@@ -21,7 +21,12 @@ class SongTagDao extends DatabaseAccessor<AppDatabase> with _$SongTagDaoMixin {
     );
   }
 
-  Future<void> removeSongFromTag(String songId) {
+  Future<void> removeSongFromTag(String songId, {String? tagId}) {
+    if (tagId != null) {
+      return (delete(songTags)
+            ..where((st) => st.song_id.equals(songId) & st.tag_id.equals(tagId)))
+          .go();
+    }
     return (delete(songTags)..where((st) => st.song_id.equals(songId))).go();
   }
 
@@ -38,15 +43,27 @@ class SongTagDao extends DatabaseAccessor<AppDatabase> with _$SongTagDaoMixin {
     return results.map((row) => row.readTable(songs)).toList();
   }
 
-  Future<Tag?> getTagForSong(String songId) async {
+  Future<List<Tag>> getTagsForSong(String songId) async {
     final query = select(tags).join([
       innerJoin(songTags, songTags.tag_id.equalsExp(tags.id)),
     ])
-      ..where(songTags.song_id.equals(songId));
+      ..where(songTags.song_id.equals(songId))
+      ..orderBy([OrderingTerm.desc(songTags.added_at)]);
 
     final results = await query.get();
-    if (results.isEmpty) return null;
-    return results.first.readTable(tags);
+    return results.map((row) => row.readTable(tags)).toList();
+  }
+
+  Future<Tag?> getTagForSong(String songId) async {
+    final list = await getTagsForSong(songId);
+    return list.firstOrNull;
+  }
+
+  Future<bool> isSongInTag(String songId, String tagId) async {
+    final query = select(songTags)
+      ..where((st) => st.song_id.equals(songId) & st.tag_id.equals(tagId));
+    final results = await query.get();
+    return results.isNotEmpty;
   }
 
   Future<Map<String, int>> getTagSongCounts() async {

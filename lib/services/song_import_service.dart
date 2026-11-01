@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:drift/drift.dart';
+import 'package:path/path.dart' as p;
 import 'package:uuid/uuid.dart';
 import 'package:audio_metadata_reader/audio_metadata_reader.dart';
 import '../data/database/app_database.dart';
@@ -74,11 +75,8 @@ class SongImportService {
   }
 
   String _getFileNameFromPath(String path) {
-    final parts = path.split('/');
-    final fileName = parts.last;
-    // Remove extension
-    final lastDot = fileName.lastIndexOf('.');
-    return lastDot > 0 ? fileName.substring(0, lastDot) : fileName;
+    final name = p.basenameWithoutExtension(path);
+    return name.isNotEmpty ? name : path;
   }
 
   Future<int> getLibrarySize() async {

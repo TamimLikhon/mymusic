@@ -1,3 +1,5 @@
+import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:just_audio_background/just_audio_background.dart';
@@ -14,16 +16,18 @@ import 'app.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  try {
-    // just_audio_background owns notification controls for local music only.
-    await JustAudioBackground.init(
-      androidNotificationChannelId: 'com.mymusic.audio',
-      androidNotificationChannelName: 'MyMusic Playback',
-      androidNotificationOngoing: true,
-      androidStopForegroundOnPause: true,
-    );
-  } catch (e, st) {
-    debugPrint('JustAudioBackground.init error: $e\n$st');
+  if (!kIsWeb && (Platform.isAndroid || Platform.isIOS)) {
+    try {
+      // just_audio_background owns notification controls for local music only.
+      await JustAudioBackground.init(
+        androidNotificationChannelId: 'com.mymusic.audio',
+        androidNotificationChannelName: 'MyMusic Playback',
+        androidNotificationOngoing: true,
+        androidStopForegroundOnPause: true,
+      );
+    } catch (e, st) {
+      debugPrint('JustAudioBackground.init error: $e\n$st');
+    }
   }
 
   try {

@@ -1,3 +1,5 @@
+import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:audio_session/audio_session.dart';
 import 'package:just_audio/just_audio.dart';
 
@@ -14,45 +16,51 @@ class UnifiedAudioService {
 
   /// Must be awaited once (in main()) before any provider uses the player.
   Future<void> initialize() async {
-    final session = await AudioSession.instance;
-    await session.configure(const AudioSessionConfiguration.music());
-
     player = AudioPlayer();
 
-    // ── Audio-focus / interruption handling ─────────────────────────────────
-    session.interruptionEventStream.listen((event) {
-      if (event.begin) {
-        _wasPlayingBeforeInterruption = player.playing;
-        switch (event.type) {
-          case AudioInterruptionType.duck:
-            player.setVolume(0.3);
-            break;
-          case AudioInterruptionType.pause:
-          case AudioInterruptionType.unknown:
-            player.pause();
-            break;
-        }
-      } else {
-        switch (event.type) {
-          case AudioInterruptionType.duck:
-            player.setVolume(1.0);
-            break;
-          case AudioInterruptionType.pause:
-          case AudioInterruptionType.unknown:
-            // Resume if we were playing before the interruption began.
-            // Covers both explicit pause interruptions (phone calls) and
-            // transient unknown events (BT headset reconnect, assistant
-            // dismissal) where the OS does not auto-resume for us.
-            if (_wasPlayingBeforeInterruption) player.play();
-            break;
-        }
-      }
-    });
+    if (!kIsWeb && (Platform.isAndroid || Platform.isIOS)) {
+      try {
+        final session = await AudioSession.instance;
+        await session.configure(const AudioSessionConfiguration.music());
 
-    // ── Headphone-disconnect handling ────────────────────────────────────────
-    session.becomingNoisyEventStream.listen((_) {
-      player.pause();
-    });
+        // ── Audio-focus / interruption handling ─────────────────────────────────
+        session.interruptionEventStream.listen((event) {
+          if (event.begin) {
+            _wasPlayingBeforeInterruption = player.playing;
+            switch (event.type) {
+              case AudioInterruptionType.duck:
+                player.setVolume(0.3);
+                break;
+              case AudioInterruptionType.pause:
+              case AudioInterruptionType.unknown:
+                player.pause();
+                break;
+            }
+          } else {
+            switch (event.type) {
+              case AudioInterruptionType.duck:
+                player.setVolume(1.0);
+                break;
+              case AudioInterruptionType.pause:
+              case AudioInterruptionType.unknown:
+                // Resume if we were playing before the interruption began.
+                // Covers both explicit pause interruptions (phone calls) and
+                // transient unknown events (BT headset reconnect, assistant
+                // dismissal) where the OS does not auto-resume for us.
+                if (_wasPlayingBeforeInterruption) player.play();
+                break;
+            }
+          }
+        });
+
+        // ── Headphone-disconnect handling ────────────────────────────────────────
+        session.becomingNoisyEventStream.listen((_) {
+          player.pause();
+        });
+      } catch (e) {
+        // AudioSession may not be available on this platform.
+      }
+    }
   }
 
   void dispose() {
